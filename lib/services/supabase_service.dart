@@ -50,8 +50,8 @@ class SupabaseService {
   User? get currentUser => _supabase.auth.currentUser;
 
   // --- PROFILE METHODS ---
-  Future<void> createCloudProfile(Map<String, dynamic> profileData) async {
-    await _supabase.from('profiles').insert(profileData);
+  Future<void> updateCloudProfile(Map<String, dynamic> profileData) async {
+    await _supabase.from('profiles').upsert(profileData);
   }
 
   Future<user_model.User?> getCloudProfile(String userId) async {

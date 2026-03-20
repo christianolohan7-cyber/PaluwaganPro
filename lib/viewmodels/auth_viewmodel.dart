@@ -51,6 +51,8 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  User? _pendingUser;
+
   // Registration with Supabase and SQLite Sync
   Future<bool> register(User user) async {
     _setLoading(true);
@@ -58,6 +60,7 @@ class AuthViewModel extends ChangeNotifier {
 
     try {
       // 1. Sign up with Supabase Auth
+      // This will trigger the DB function to create a basic profile row
       final response = await _supabaseService.signUp(
         email: user.email,
         password: user.password,
@@ -74,61 +77,27 @@ class AuthViewModel extends ChangeNotifier {
       }
 
       final cloudId = response.user!.id;
+      
+      // Store user data locally so we can complete it after verification
+      _pendingUser = User(
+        id: cloudId,
+        fullName: user.fullName,
+        address: user.address,
+        age: user.age,
+        email: user.email,
+        password: user.password,
+        idFrontPath: user.idFrontPath,
+        idBackPath: user.idBackPath,
+        gcashName: user.gcashName,
+        gcashNumber: user.gcashNumber,
+        urcodePath: user.urcodePath,
+        createdAt: DateTime.now(),
+      );
 
-      // 2. Upload files to Supabase Storage
-      String idFrontUrl = user.idFrontPath;
-      String idBackUrl = user.idBackPath;
-      String? urcodeUrl = user.urcodePath;
-
-      try {
-        if (user.idFrontPath.isNotEmpty && !user.idFrontPath.startsWith('http')) {
-          idFrontUrl = await _supabaseService.uploadFile(
-            bucket: 'profiles',
-            filePath: user.idFrontPath,
-            remotePath: '$cloudId/id_front_${DateTime.now().millisecondsSinceEpoch}.jpg',
-          );
-        }
-
-        if (user.idBackPath.isNotEmpty && !user.idBackPath.startsWith('http')) {
-          idBackUrl = await _supabaseService.uploadFile(
-            bucket: 'profiles',
-            filePath: user.idBackPath,
-            remotePath: '$cloudId/id_back_${DateTime.now().millisecondsSinceEpoch}.jpg',
-          );
-        }
-
-        if (user.urcodePath != null && user.urcodePath!.isNotEmpty && !user.urcodePath!.startsWith('http')) {
-          urcodeUrl = await _supabaseService.uploadFile(
-            bucket: 'profiles',
-            filePath: user.urcodePath!,
-            remotePath: '$cloudId/urcode_${DateTime.now().millisecondsSinceEpoch}.jpg',
-          );
-        }
-      } catch (e) {
-        print('Warning: File upload failed, continuing with local paths: $e');
-      }
-
-      // 3. Create Cloud Profile in 'profiles' table
-      final profileData = {
-        'id': cloudId,
-        'full_name': user.fullName,
-        'address': user.address,
-        'age': user.age,
-        'email': user.email.toLowerCase(),
-        'id_front_path': idFrontUrl,
-        'id_back_path': idBackUrl,
-        'gcash_name': user.gcashName,
-        'gcash_number': user.gcashNumber,
-        'urcode_path': urcodeUrl,
-        'created_at': DateTime.now().toIso8601String(),
-      };
-
-      await _supabaseService.createCloudProfile(profileData);
-
-      // 4. Save to local SQLite for offline support
+      // Save to local SQLite immediately for backup
       final db = await _dbService.database;
       await db.insert('users', {
-        ...profileData,
+        ..._pendingUser!.toMap(),
         'password': user.password,
       }, conflictAlgorithm: ConflictAlgorithm.replace);
 
@@ -149,6 +118,7 @@ class AuthViewModel extends ChangeNotifier {
     _setError(null);
 
     try {
+      // 1. Verify the OTP
       final response = await _supabaseService.verifyOTP(
         email: email,
         token: token,
@@ -156,14 +126,20 @@ class AuthViewModel extends ChangeNotifier {
       );
 
       if (response.user != null) {
-        // Verification successful, fetch profile and set currentUser
         final cloudId = response.user!.id;
+
+        // 2. NOW that we are authenticated, complete the profile
+        if (_pendingUser != null && _pendingUser!.id == cloudId) {
+          await _completeRegistration(_pendingUser!);
+          _pendingUser = null;
+        }
+
+        // 3. Fetch final profile
         final cloudUser = await _supabaseService.getCloudProfile(cloudId);
         
         if (cloudUser != null) {
           _currentUser = cloudUser;
         } else {
-          // Fallback to local if profile table is still syncing
           final db = await _dbService.database;
           final rows = await db.query('users', where: 'id = ?', whereArgs: [cloudId]);
           if (rows.isNotEmpty) {
@@ -181,6 +157,65 @@ class AuthViewModel extends ChangeNotifier {
       return false;
     } finally {
       _setLoading(false);
+    }
+  }
+
+  // Private helper to handle file uploads and profile completion
+  Future<void> _completeRegistration(User user) async {
+    String idFrontUrl = user.idFrontPath;
+    String idBackUrl = user.idBackPath;
+    String? urcodeUrl = user.urcodePath;
+
+    try {
+      // These will now work because we have an active session!
+      if (user.idFrontPath.isNotEmpty && !user.idFrontPath.startsWith('http')) {
+        idFrontUrl = await _supabaseService.uploadFile(
+          bucket: 'profiles',
+          filePath: user.idFrontPath,
+          remotePath: '${user.id}/id_front_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        );
+      }
+
+      if (user.idBackPath.isNotEmpty && !user.idBackPath.startsWith('http')) {
+        idBackUrl = await _supabaseService.uploadFile(
+          bucket: 'profiles',
+          filePath: user.idBackPath,
+          remotePath: '${user.id}/id_back_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        );
+      }
+
+      if (user.urcodePath != null && user.urcodePath!.isNotEmpty && !user.urcodePath!.startsWith('http')) {
+        urcodeUrl = await _supabaseService.uploadFile(
+          bucket: 'profiles',
+          filePath: user.urcodePath!,
+          remotePath: '${user.id}/urcode_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        );
+      }
+
+      // Update the cloud profile with the uploaded URLs and GCash info
+      final profileData = {
+        'id': user.id,
+        'full_name': user.fullName,
+        'address': user.address,
+        'age': user.age,
+        'email': user.email.toLowerCase(),
+        'id_front_path': idFrontUrl,
+        'id_back_path': idBackUrl,
+        'gcash_name': user.gcashName,
+        'gcash_number': user.gcashNumber,
+        'urcode_path': urcodeUrl,
+        'created_at': DateTime.now().toIso8601String(),
+      };
+
+      await _supabaseService.updateCloudProfile(profileData);
+      
+      // Update local SQLite with the new URLs
+      final db = await _dbService.database;
+      await db.update('users', profileData, where: 'id = ?', whereArgs: [user.id]);
+    } catch (e) {
+      print('Error completing profile: $e');
+      // We don't throw here to allow the user to at least log in, 
+      // they can finish their profile later in the Profile view if needed.
     }
   }
 
