@@ -1,76 +1,33 @@
-PaluwaganPro
-<<<<<<< HEAD
+# PaluwaganPro
+
 A modern Flutter application for managing digital paluwagan (rotating savings and credit associations) groups. Bring the traditional Filipino savings system into the digital age with transparent tracking, secure payments, and community management.
 
-Features
-User Authentication: Secure sign-up and login with password validation
+## Features
+- **User Authentication**: Secure sign-up and login with password validation
+- **Group Management**: Create and join paluwagan groups with unique join codes
+- **Payment System**: GCash integration with payment proof uploads and verification
+- **Real-time Tracking**: Monitor contributions, payouts, and rotation schedules
+- **Group Chat**: Communicate with members within each group
+- **Notifications**: Get alerts for payments, verifications, and group updates
+- **Profile Management**: Update personal info and GCash details
 
-Group Management: Create and join paluwagan groups with unique join codes
+## Tech Stack
+- **Flutter** (Frontend)
+- **SQLite** (Local database with sqflite)
+- **Supabase** (Cloud database & Authentication)
+- **Provider** (State management)
+- **Image Picker** (Photo uploads)
 
-Payment System: GCash integration with payment proof uploads and verification
+## Getting Started
 
-Real-time Tracking: Monitor contributions, payouts, and rotation schedules
+### Prerequisites
+- Flutter SDK (latest stable)
+- Dart SDK
 
-Group Chat: Communicate with members within each group
+### Installation
+1. Clone the repository
+2. Run `flutter pub get` to install dependencies
+3. Run `flutter run` to start the application
 
-Notifications: Get alerts for payments, verifications, and group updates
-
-Profile Management: Update personal info and GCash details
-
-Tech Stack
-Flutter (frontend)
-
-SQLite (local database with sqflite)
-
-Provider (state management)
-
-Image Picker (photo uploads)
-=======
-A modern Flutter application for managing digital paluwagan (rotating savings and credit associations) groups.
-Bring the traditional Filipino savings system into the digital age with transparent tracking, secure payments,
-and community management.
-
-Features
-User Authentication: Secure sign-up and login with password validation
-Group Management: Create and join paluwagan groups with unique join codes
-Payment System: GCash integration with payment proof uploads and verification
-Real-time Tracking: Monitor contributions, payouts, and rotation schedules
-Group Chat: Communicate with members within each group
-Notifications: Get alerts for payments, verifications, and group updates
-Profile Management: Update personal info and GCash details
-
-Tech Stack
-Flutter 
-SQLite - database
-Provider -state management
-Image Picker - photo uploads
->>>>>>> upstream/main
-
-Getting Started
-Prerequisites
-Flutter SDK (latest stable)
-<<<<<<< HEAD
-
-=======
->>>>>>> upstream/main
-Dart SDK
-
-Installation
-Clone the repository
-<<<<<<< HEAD
-
-Run flutter pub get to install dependencies
-
-Run flutter run to start the application
-
-Database Schema
-The app uses SQLite with tables for users, groups, members, contributions, transactions, chat messages, notifications, payment proofs, and round rotations. Database migrations are handled automatically on version upgrades.
-=======
-Run flutter pub get to install dependencies
-Run flutter run to start the application
-
-Database Schema
-The app uses SQLite with tables for users, groups, members, contributions, 
-transactions, chat messages, notifications, payment proofs, and round rotations. 
-Database migrations are handled automatically on version upgrades.
->>>>>>> upstream/main
+## Database Schema
+The app uses a hybrid database approach (SQLite + Supabase) with tables for users, groups, members, contributions, transactions, chat messages, notifications, payment proofs, and round rotations. Database migrations are handled automatically.
