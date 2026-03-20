@@ -252,17 +252,22 @@ class GroupsViewModel extends ChangeNotifier {
           .toList();
 
       // 2. Sync to local SQLite
-      final db = await _dbService.database;
-      await db.insert('groups', _currentGroup!.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
-      
-      for (var m in _currentGroupMembers) {
-        await db.insert('group_members', m.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
-      }
-      for (var r in _roundRotations) {
-        await db.insert('round_rotations', r.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
-      }
-      for (var c in _currentGroupContributions) {
-        await db.insert('contributions', c.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+      try {
+        final db = await _dbService.database;
+        await db.insert('groups', _currentGroup!.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+        
+        for (var m in _currentGroupMembers) {
+          await db.insert('group_members', m.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+        }
+        for (var r in _roundRotations) {
+          await db.insert('round_rotations', r.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+        }
+        for (var c in _currentGroupContributions) {
+          await db.insert('contributions', c.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+        }
+      } catch (sqle) {
+        print('SQLite sync error (non-fatal): $sqle');
+        // We don't throw here so the UI still updates from cloud data
       }
 
       notifyListeners();
@@ -497,32 +502,44 @@ for (var member in members) {
       await _supabaseService.createTransactions(transactions);
 
       // 4. Cycle Completion Check
-      // We fetch the latest contributions to see if this round is now fully paid
+      // Reload to get latest statuses
       await loadGroupDetails(proof.groupId);
       final allContributions = _currentGroupContributions;
-      final currentRoundPayments = allContributions.where((c) => c.round == group.currentRound && c.status == 'paid');
+      final latestGroup = _currentGroup;
       
-      if (currentRoundPayments.length == group.maxMembers) {
+      if (latestGroup == null) return true;
+
+      // Specifically check if all members for THIS round are paid
+      final currentRoundPayments = allContributions.where((c) => c.round == latestGroup.currentRound && c.status == 'paid');
+      
+      if (currentRoundPayments.length == latestGroup.maxMembers) {
         // ROUND FINISHED!
         
         // A. Increment recipient's received count
-        await _supabaseService.updateMemberStats(group.id, proof.recipientId, incrementReceived: true);
+        await _supabaseService.updateMemberStats(latestGroup.id, proof.recipientId, incrementReceived: true);
         
-        // B. Mark current rotation as completed
-        await _supabaseService.updateRotationStatus(group.id, group.currentRound, 'completed');
+        // B. Mark current rotation as completed in round_rotations table
+        await _supabaseService.updateRotationStatus(latestGroup.id, latestGroup.currentRound, 'completed');
 
-        if (group.currentRound == group.maxMembers) {
+        if (latestGroup.currentRound == latestGroup.maxMembers) {
           // Final round finished
-          await _supabaseService.updateGroupStatus(group.id, 'completed');
+          await _supabaseService.updateGroupStatus(latestGroup.id, 'completed');
         } else {
-          // Move to next round
-          final nextRound = group.currentRound + 1;
-          await _supabaseService.updateGroupRound(group.id, nextRound);
-          await _supabaseService.updateRotationStatus(group.id, nextRound, 'in_progress');
+          // Move to next round in groups table
+          final nextRound = latestGroup.currentRound + 1;
+          try {
+            await _supabaseService.updateGroupRound(latestGroup.id, nextRound);
+            print('Successfully updated group to round $nextRound');
+          } catch (e) {
+            print('CRITICAL: Failed to update group round in Supabase: $e');
+            // We continue to update rotation status as a fallback so at least the schedule tab works
+          }
+          
+          await _supabaseService.updateRotationStatus(latestGroup.id, nextRound, 'in_progress');
         }
         
         // Final reload to sync everything
-        await loadGroupDetails(group.id);
+        await loadGroupDetails(latestGroup.id);
       }
 
       return true;

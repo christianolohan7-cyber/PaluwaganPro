@@ -268,6 +268,27 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                 final proofs = proofSnapshot.data?.map((p) => PaymentProof.fromMap(p)).toList() 
                     ?? groupsVm.pendingPayments;
 
+                // Derive the ACTUAL current round from rotations
+                final activeRotation = rotations.firstWhere(
+                  (r) => r.status == 'in_progress',
+                  orElse: () => rotations.firstWhere(
+                    (r) => r.round == group.currentRound,
+                    orElse: () => rotations.isNotEmpty ? rotations.last : RoundRotation(
+                      id: 0,
+                      groupId: group.id,
+                      round: group.currentRound,
+                      payoutDate: DateTime.now(),
+                      recipientId: '',
+                      recipientName: 'TBD',
+                      status: 'pending',
+                    ),
+                  ),
+                );
+
+                final actualCurrentRound = activeRotation.round;
+                final completedRounds = rotations.where((r) => r.status == 'completed').length;
+                final totalRounds = rotations.isNotEmpty ? rotations.length : group.maxMembers;
+
                 // Get creator's name from members list
                 final creatorMember = members.firstWhere(
                   (m) => m.userId == group.createdBy,
@@ -282,40 +303,6 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                     rotationOrder: 0,
                   ),
                 );
-
-                // Get current and next round rotations
-                final currentRoundRotation = rotations.firstWhere(
-                  (r) => r.round == group.currentRound,
-                  orElse: () => RoundRotation(
-                    id: 0,
-                    groupId: group.id,
-                    round: group.currentRound,
-                    payoutDate: DateTime.now(),
-                    recipientId: '',
-                    recipientName: 'TBD',
-                    status: 'pending',
-                  ),
-                );
-
-                final nextRoundRotation = group.currentRound < group.maxMembers
-                    ? rotations.firstWhere(
-                        (r) => r.round == group.currentRound + 1,
-                        orElse: () => RoundRotation(
-                          id: 0,
-                          groupId: group.id,
-                          round: group.currentRound + 1,
-                          payoutDate: DateTime.now(),
-                          recipientId: '',
-                          recipientName: 'TBD',
-                          status: 'pending',
-                        ),
-                      )
-                    : null;
-
-                // Check if Round 1 has any payments
-                final round1Payments = contributions
-                    .where((c) => c.round == 1 && c.status == 'paid')
-                    .length;
 
                 // Get current user's pending contributions
                 final pendingContributions = contributions
@@ -547,7 +534,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                         const SizedBox(height: 24),
                       ],
 
-                      // Stats Grid - UPDATED with theme color borders
+                      // Stats Grid - UPDATED with derived values
                       GridView.count(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
@@ -584,7 +571,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                             label: 'Current Round',
                             value: group.groupStatus == 'pending'
                                 ? 'Not Started'
-                                : '${group.currentRound}/${group.maxMembers}',
+                                : '$actualCurrentRound/$totalRounds',
                             icon: Icons.timelapse_outlined,
                             color: colorScheme.primary,
                           ),
@@ -593,7 +580,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
 
                       const SizedBox(height: 24),
 
-                      // Payout Information - FIXED OVERFLOW ISSUE
+                      // Payout Information - FIXED based on rotation status
                       if (group.groupStatus == 'active') ...[
                         Container(
                           padding: const EdgeInsets.all(16),
@@ -611,145 +598,87 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                           ),
                           child: Column(
                             children: [
-                              // Current Round (Payout Now) - FIXED ROW WITH EXPANDED
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: colorScheme.primary.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Icon(Icons.payments, color: colorScheme.primary),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded( // Added Expanded here
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                              // All Rounds List
+                              ...rotations.map((rotation) {
+                                final isCurrent = rotation.status == 'in_progress';
+                                final isPast = rotation.status == 'completed';
+                                
+                                return Column(
+                                  children: [
+                                    if (rotation.round > 1) const Divider(height: 24),
+                                    Row(
                                       children: [
-                                        const Text(
-                                          'Payout Now',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey,
+                                        Container(
+                                          padding: const EdgeInsets.all(10),
+                                          decoration: BoxDecoration(
+                                            color: isCurrent 
+                                                ? colorScheme.primary.withOpacity(0.1)
+                                                : Colors.grey.shade100,
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: Icon(
+                                            isCurrent ? Icons.payments : (isPast ? Icons.check_circle : Icons.schedule), 
+                                            color: isCurrent ? colorScheme.primary : (isPast ? Colors.green : Colors.grey.shade600)
                                           ),
                                         ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          'Round ${group.currentRound}',
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                isCurrent ? 'Payout Now' : (isPast ? 'Completed' : 'Upcoming Payout'),
+                                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                'Round ${rotation.round}',
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
+                                                ),
+                                              ),
+                                              Text(
+                                                'Recipient: ${rotation.recipientName}',
+                                                style: const TextStyle(fontSize: 13),
+                                                overflow: TextOverflow.ellipsis,
+                                                maxLines: 1,
+                                              ),
+                                              Text(
+                                                _formatDateWithYear(rotation.payoutDate),
+                                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                        Text(
-                                          'Recipient: ${currentRoundRotation.recipientName}',
-                                          style: const TextStyle(fontSize: 13),
-                                          overflow: TextOverflow.ellipsis, // Added overflow
-                                          maxLines: 1, // Added maxLines
-                                        ),
-                                        Text(
-                                          _formatDateWithYear(currentRoundRotation.payoutDate),
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey,
+                                        if (isCurrent || isPast)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: (isPast ? Colors.green : colorScheme.primary).withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Text(
+                                              isPast ? 'DONE' : _getDaysUntil(rotation.payoutDate),
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600,
+                                                color: isPast ? Colors.green : colorScheme.primary,
+                                              ),
+                                            ),
                                           ),
-                                        ),
                                       ],
                                     ),
-                                  ),
-                                  const SizedBox(width: 8), // Added spacing
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: colorScheme.primary.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      _getDaysUntil(currentRoundRotation.payoutDate),
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: _getDaysUntil(currentRoundRotation.payoutDate).contains('Today')
-                                            ? Colors.green
-                                            : colorScheme.primary,
-                                      ),
-                                      overflow: TextOverflow.ellipsis, // Added overflow
-                                      maxLines: 1, // Added maxLines
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              if (nextRoundRotation != null) ...[
-                                const Divider(height: 24),
-
-                                // Next Round - FIXED ROW WITH EXPANDED
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(10),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.shade100,
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Icon(
-                                        Icons.schedule,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded( // Added Expanded here
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          const Text(
-                                            'Next Payout',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            'Round ${group.currentRound + 1}',
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                          Text(
-                                            'Recipient: ${nextRoundRotation.recipientName}',
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey,
-                                            ),
-                                            overflow: TextOverflow.ellipsis, // Added overflow
-                                            maxLines: 1, // Added maxLines
-                                          ),
-                                          Text(
-                                            _formatDateWithYear(nextRoundRotation.payoutDate),
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
                                   ],
-                                ),
-                              ],
+                                );
+                              }).toList(),
                             ],
                           ),
                         ),
 
                         const SizedBox(height: 24),
 
-                        // Cycle Progress
+                        // Cycle Progress - Derived from completed rounds
                         const Text(
                           'Cycle Progress',
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
@@ -772,7 +701,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                           child: Column(
                             children: [
                               LinearProgressIndicator(
-                                value: progress,
+                                value: completedRounds / totalRounds,
                                 backgroundColor: Colors.grey.shade200,
                                 valueColor: AlwaysStoppedAnimation(colorScheme.primary),
                                 minHeight: 8,
@@ -782,29 +711,19 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    '${group.currentRound} rounds completed',
+                                    '$completedRounds rounds completed',
                                     style: const TextStyle(
                                       fontSize: 12,
                                       color: Colors.grey,
                                     ),
                                   ),
-                                  if (round1Payments > 0)
-                                    Text(
-                                      '${(progress * 100).toStringAsFixed(0)}%',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    )
-                                  else
-                                    Text(
-                                      'Waiting for Round 1 payments...',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontStyle: FontStyle.italic,
-                                        color: Colors.grey.shade600,
-                                      ),
+                                  Text(
+                                    '${((completedRounds / totalRounds) * 100).toStringAsFixed(0)}%',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
                                     ),
+                                  ),
                                 ],
                               ),
                             ],
@@ -814,7 +733,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                         const SizedBox(height: 24),
                       ],
 
-                      // Pending Contributions (for current user) - UPDATED with blue theme color
+                      // Pending Contributions (for current user) - Use derived round
                       if (pendingContributions.isNotEmpty) ...[
                         const Text(
                           'Your Pending Contributions',
@@ -828,6 +747,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                             contribution,
                             rotations,
                             groupsVm,
+                            actualCurrentRound,
                           ),
                         ),
                       ],
@@ -848,6 +768,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
     Contribution contribution,
     List<RoundRotation> rotations,
     GroupsViewModel groupsVm,
+    int actualCurrentRound,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -865,9 +786,10 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
     );
 
     // Check if payment is available (group is active and it's the current round)
+    // Use actualCurrentRound for more dynamic availability
     final isPaymentAvailable =
         group.groupStatus == 'active' &&
-        contribution.round == group.currentRound &&
+        contribution.round == actualCurrentRound &&
         contribution.status == 'pending';
 
     // Check if payment has already been submitted

@@ -21,7 +21,7 @@ class DbService {
 
     return openDatabase(
       dbPath,
-      version: 10, // Increment version for UUID migration
+      version: 11, // Increment version for recipient_id in contributions
       onCreate: (db, version) async {
         await _createSchema(db);
         await _seedInitialData(db);
@@ -36,6 +36,7 @@ class DbService {
         if (oldVersion < 8) await _upgradeToV8(db);
         if (oldVersion < 9) await _upgradeToV9(db);
         if (oldVersion < 10) await _upgradeToV10(db);
+        if (oldVersion < 11) await _upgradeToV11(db);
       },
     );
   }
@@ -112,6 +113,7 @@ class DbService {
         status TEXT NOT NULL,
         due_date TEXT NOT NULL,
         paid_at TEXT,
+        recipient_id TEXT,
         FOREIGN KEY (group_id) REFERENCES groups (id),
         FOREIGN KEY (user_id) REFERENCES users (id)
       );
@@ -519,6 +521,15 @@ class DbService {
     await db.execute('DROP TABLE IF EXISTS users');
     
     await _createSchema(db);
+  }
+
+  Future<void> _upgradeToV11(Database db) async {
+    try {
+      await db.execute('ALTER TABLE contributions ADD COLUMN recipient_id TEXT;');
+      print('Added recipient_id column to contributions table');
+    } catch (e) {
+      print('recipient_id column migration note: $e');
+    }
   }
 
   Future<void> _seedInitialData(Database db) async {
