@@ -410,7 +410,6 @@ for (var member in members) {
   Future<void> sendChatMessage(int groupId, String userId, String userName, String message) async {
     try {
       final messageData = {
-        'id': 0, // Temp ID for instant feedback
         'group_id': groupId,
         'user_id': userId,
         'user_name': userName,
@@ -419,10 +418,8 @@ for (var member in members) {
       };
 
       await _supabaseService.sendChatMessage(messageData);
-      
-      // Optionally add to local for instant feedback
-      _currentGroupChats.add(GroupChat.fromMap(messageData));
-      notifyListeners();
+      // We don't manually add to _currentGroupChats because the StreamBuilder in the UI 
+      // will pick up the change from Supabase real-time stream automatically.
     } catch (e) {
       print('Error sending message: $e');
     }

@@ -1709,12 +1709,15 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                       .toList() ??
                   [];
 
+              // Sort messages by timestamp to ensure correct order
+              messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
               if (messages.isEmpty) {
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.chat, size: 64, color: Colors.grey.shade400),
+                      Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey.shade400),
                       const SizedBox(height: 16),
                       Text(
                         'No messages yet',
@@ -1725,7 +1728,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Be the first to send a message!',
+                        'Be the first to start the conversation!',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey.shade500,
@@ -1741,7 +1744,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                 if (_chatScrollController.hasClients) {
                   _chatScrollController.animateTo(
                     _chatScrollController.position.maxScrollExtent,
-                    duration: const Duration(milliseconds: 300),
+                    duration: const Duration(milliseconds: 200),
                     curve: Curves.easeOut,
                   );
                 }
