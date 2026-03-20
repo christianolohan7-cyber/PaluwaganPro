@@ -102,7 +102,7 @@ class SupabaseService {
     // where the user is in the group_members table.
     final response = await _supabase
         .from('groups')
-        .select('*, group_members!inner(*)')
+        .select('*, group_members!inner(*, profiles(profile_picture))')
         .eq('group_members.user_id', userId);
     return List<Map<String, dynamic>>.from(response);
   }
@@ -118,7 +118,7 @@ class SupabaseService {
   Future<Map<String, dynamic>> getGroupDetails(int groupId) async {
     final response = await _supabase
         .from('groups')
-        .select('*, group_members(*), round_rotations(*), contributions(*), group_chat(*), payment_proofs(*)')
+        .select('*, group_members(*, profiles(profile_picture)), round_rotations(*), contributions(*), group_chat(*, profiles(profile_picture)), payment_proofs(*)')
         .eq('id', groupId)
         .single();
     return response;

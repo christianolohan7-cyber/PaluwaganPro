@@ -31,6 +31,9 @@ class GroupsViewModel extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
+  // Cache for profile pictures to support real-time streams
+  final Map<String, String?> _profileCache = {};
+
   List<PaluwaganGroup> get groups => _groups;
   PaluwaganGroup? get currentGroup => _currentGroup;
   List<GroupMember> get currentGroupMembers => _currentGroupMembers;
@@ -42,6 +45,7 @@ class GroupsViewModel extends ChangeNotifier {
   List<RoundRotation> get roundRotations => _roundRotations;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  Map<String, String?> get profileCache => _profileCache;
 
   // --- REAL-TIME STREAMS ---
 
@@ -238,6 +242,14 @@ class GroupsViewModel extends ChangeNotifier {
       _currentGroupMembers = (data['group_members'] as List)
           .map((m) => GroupMember.fromMap(m))
           .toList();
+      
+      // Update profile cache from members
+      for (var m in _currentGroupMembers) {
+        if (m.profilePicture != null) {
+          _profileCache[m.userId] = m.profilePicture;
+        }
+      }
+
       _roundRotations = (data['round_rotations'] as List)
           .map((r) => RoundRotation.fromMap(r))
           .toList();
@@ -247,6 +259,14 @@ class GroupsViewModel extends ChangeNotifier {
       _currentGroupChats = (data['group_chat'] as List)
           .map((ch) => GroupChat.fromMap(ch))
           .toList();
+      
+      // Update profile cache from chats (if any new ones)
+      for (var ch in _currentGroupChats) {
+        if (ch.profilePicture != null) {
+          _profileCache[ch.userId] = ch.profilePicture;
+        }
+      }
+
       _pendingPayments = (data['payment_proofs'] as List)
           .map((p) => PaymentProof.fromMap(p))
           .toList();

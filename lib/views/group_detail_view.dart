@@ -124,93 +124,121 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
 
                 return Scaffold(
                   appBar: AppBar(
-                    title: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(group.name, style: const TextStyle(fontSize: 18)),
+                    backgroundColor: Colors.white,
+                    elevation: 0.5,
+                    toolbarHeight: isCreator ? 72 : 60,
+                    titleSpacing: 0,
+                    leading: const BackButton(color: Colors.black87),
+                    title: Padding(
+                      padding: const EdgeInsets.only(right: 16),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  group.name,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                if (isCreator) ...[
+                                  const SizedBox(height: 4),
+                                  GestureDetector(
+                                    onTap: () {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Join code copied!')),
+                                      );
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade100,
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: Colors.grey.shade300),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.vpn_key_rounded, size: 12, color: Colors.grey.shade600),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            group.joinCode,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              letterSpacing: 1.5,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.grey.shade800,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Icon(Icons.copy_rounded, size: 10, color: Colors.grey.shade500),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: group.groupStatus == 'active'
+                                  ? colorScheme.primary.withOpacity(0.08)
+                                  : (group.groupStatus == 'completed'
+                                      ? Colors.green.withOpacity(0.08)
+                                      : Colors.grey.withOpacity(0.08)),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
                                 color: group.groupStatus == 'active'
-                                    ? colorScheme.primary.withOpacity(0.08)
+                                    ? colorScheme.primary.withOpacity(0.2)
                                     : (group.groupStatus == 'completed'
-                                        ? Colors.green.withOpacity(0.08)
-                                        : Colors.grey.withOpacity(0.08)),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                group.groupStatus == 'active' 
-                                    ? 'Active' 
-                                    : (group.groupStatus == 'completed' ? 'Completed' : 'Pending'),
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: group.groupStatus == 'active'
-                                      ? colorScheme.primary
-                                      : (group.groupStatus == 'completed' ? Colors.green : Colors.grey),
-                                ),
+                                        ? Colors.green.withOpacity(0.2)
+                                        : Colors.grey.withOpacity(0.2)),
                               ),
                             ),
-                          ],
-                        ),
-                    if (isCreator)
-                      GestureDetector(
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Join code copied!')),
-                          );
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.only(top: 4),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade200,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.key, size: 12),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Code: ${group.joinCode}',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                            child: Text(
+                              (group.groupStatus ?? 'PENDING').toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: group.groupStatus == 'active'
+                                    ? colorScheme.primary
+                                    : (group.groupStatus == 'completed' ? Colors.green : Colors.grey),
                               ),
-                              const Icon(Icons.copy, size: 12),
-                            ],
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                  ],
-                ),
-                bottom: TabBar(
-                  controller: _tabController,
-                  isScrollable: true,
-                  tabs: const [
-                    Tab(text: 'Overview'),
-                    Tab(text: 'Members'),
-                    Tab(text: 'Schedule'),
-                    Tab(text: 'Chat'),
-                  ],
-                  labelColor: colorScheme.primary,
-                  unselectedLabelColor: Colors.grey,
-                  indicatorColor: colorScheme.primary,
-                ),
-              ),
+                    ),
+                    bottom: TabBar(
+                      controller: _chatController.text.isEmpty ? _tabController : _tabController, // Dummy use to keep context if needed, but really just updating TabBar
+                      isScrollable: false,
+                      labelPadding: EdgeInsets.zero,
+                      tabs: const [
+                        Tab(child: Text('Overview', style: TextStyle(fontSize: 12))),
+                        Tab(child: Text('Members', style: TextStyle(fontSize: 12))),
+                        Tab(child: Text('Schedule', style: TextStyle(fontSize: 12))),
+                        Tab(child: Text('Chat', style: TextStyle(fontSize: 12))),
+                      ],
+                      labelColor: colorScheme.primary,
+                      unselectedLabelColor: Colors.grey.shade600,
+                      indicatorColor: colorScheme.primary,
+                      indicatorWeight: 3,
+                      indicatorSize: TabBarIndicatorSize.tab,
+                    ),
+                  ),
               body: TabBarView(
                 controller: _tabController,
                 children: [

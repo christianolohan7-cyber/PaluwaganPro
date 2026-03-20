@@ -8,6 +8,7 @@ class GroupMember {
     required this.paidContributions,
     required this.receivedPayouts,
     required this.rotationOrder,
+    this.profilePicture,
   });
 
   final int id;
@@ -18,6 +19,7 @@ class GroupMember {
   final int paidContributions;
   final int receivedPayouts;
   final int rotationOrder;
+  final String? profilePicture;
 
   Map<String, dynamic> toMap() {
     return {
@@ -29,10 +31,14 @@ class GroupMember {
       'paid_contributions': paidContributions,
       'received_payouts': receivedPayouts,
       'rotation_order': rotationOrder,
+      'profile_picture': profilePicture,
     };
   }
 
   factory GroupMember.fromMap(Map<String, dynamic> map) {
+    // Check if profiles join data is present (Supabase)
+    final profileData = map['profiles'] as Map<String, dynamic>?;
+
     return GroupMember(
       id: map['id'] as int? ?? 0,
       groupId: map['group_id'] as int? ?? 0,
@@ -44,6 +50,7 @@ class GroupMember {
       paidContributions: map['paid_contributions'] as int? ?? 0,
       receivedPayouts: map['received_payouts'] as int? ?? 0,
       rotationOrder: map['rotation_order'] as int? ?? 0,
+      profilePicture: map['profile_picture'] as String? ?? profileData?['profile_picture'] as String?,
     );
   }
 }
