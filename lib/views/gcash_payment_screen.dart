@@ -246,7 +246,9 @@ class _GcashPaymentScreenState extends State<GcashPaymentScreen> {
                                 context: context,
                                 builder: (context) => AlertDialog(
                                   title: const Text('InstaPay QR Code'),
-                                  content: Image.file(File(recipientQrPath!)),
+                                  content: recipientQrPath!.startsWith('http')
+                                      ? Image.network(recipientQrPath!)
+                                      : Image.file(File(recipientQrPath!)),
                                   actions: [
                                     TextButton(
                                       onPressed: () =>

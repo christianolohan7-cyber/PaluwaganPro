@@ -328,8 +328,6 @@ class AuthViewModel extends ChangeNotifier {
     String? fullName,
     String? address,
     int? age,
-    String? bio,
-    String? phoneNumber,
     String? profilePicture,
     String? gcashName,
     String? gcashNumber,
@@ -337,22 +335,48 @@ class AuthViewModel extends ChangeNotifier {
   }) async {
     if (_currentUser == null) return false;
 
-    final db = await _dbService.database;
-    final updates = <String, dynamic>{};
-
-    if (fullName != null) updates['full_name'] = fullName;
-    if (address != null) updates['address'] = address;
-    if (age != null) updates['age'] = age;
-    if (bio != null) updates['bio'] = bio;
-    if (phoneNumber != null) updates['phone_number'] = phoneNumber;
-    if (profilePicture != null) updates['profile_picture'] = profilePicture;
-    if (gcashName != null) updates['gcash_name'] = gcashName;
-    if (gcashNumber != null) updates['gcash_number'] = gcashNumber;
-    if (urcodePath != null) updates['urcode_path'] = urcodePath;
-
-    if (updates.isEmpty) return true;
+    _setLoading(true);
+    _setError(null);
 
     try {
+      String? profilePictureUrl = profilePicture;
+      String? urcodeUrl = urcodePath;
+
+      // 1. Upload new files if they are local paths
+      if (profilePicture != null && !profilePicture.startsWith('http')) {
+        profilePictureUrl = await _supabaseService.uploadFile(
+          bucket: 'profiles',
+          filePath: profilePicture,
+          remotePath: '${_currentUser!.id}/profile_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        );
+      }
+
+      if (urcodePath != null && !urcodePath.startsWith('http')) {
+        urcodeUrl = await _supabaseService.uploadFile(
+          bucket: 'profiles',
+          filePath: urcodePath,
+          remotePath: '${_currentUser!.id}/urcode_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        );
+      }
+
+      // 2. Prepare updates for Cloud
+      final updates = <String, dynamic>{
+        'id': _currentUser!.id,
+      };
+
+      if (fullName != null) updates['full_name'] = fullName;
+      if (address != null) updates['address'] = address;
+      if (age != null) updates['age'] = age;
+      if (profilePictureUrl != null) updates['profile_picture'] = profilePictureUrl;
+      if (gcashName != null) updates['gcash_name'] = gcashName;
+      if (gcashNumber != null) updates['gcash_number'] = gcashNumber;
+      if (urcodeUrl != null) updates['urcode_path'] = urcodeUrl;
+
+      // 3. Update Supabase
+      await _supabaseService.updateCloudProfile(updates);
+
+      // 4. Update local SQLite
+      final db = await _dbService.database;
       await db.update(
         'users',
         updates,
@@ -360,22 +384,20 @@ class AuthViewModel extends ChangeNotifier {
         whereArgs: [_currentUser!.id],
       );
 
-      // Refresh current user
-      final rows = await db.query(
-        'users',
-        where: 'id = ?',
-        whereArgs: [_currentUser!.id],
-        limit: 1,
-      );
-
-      if (rows.isNotEmpty) {
-        _currentUser = User.fromMap(rows.first);
-        notifyListeners();
-        return true;
+      // 5. Refresh current user state
+      final cloudUser = await _supabaseService.getCloudProfile(_currentUser!.id);
+      if (cloudUser != null) {
+        _currentUser = cloudUser;
       }
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      print('Error updating profile: $e');
+      _setError('Failed to update profile: $e');
       return false;
-    } catch (_) {
-      return false;
+    } finally {
+      _setLoading(false);
     }
   }
 }

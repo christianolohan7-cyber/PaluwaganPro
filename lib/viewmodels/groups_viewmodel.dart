@@ -291,7 +291,7 @@ class GroupsViewModel extends ChangeNotifier {
         return false;
       }
 
-      // 2. Step 5.1: Randomized Rotation
+      // 2. Step 5.1: Randomized Rotation (all members including creator)
       final List<GroupMember> shuffledMembers = List.from(members)..shuffle();
       
       // 3. Create Round Rotations and Contributions
@@ -313,18 +313,21 @@ class GroupsViewModel extends ChangeNotifier {
           'recipient_name': recipient.userName,
           'status': roundNum == 1 ? 'in_progress' : 'pending',
         });
-
-        // Create contribution slots for everyone for this round
-        for (var member in members) {
-          contributionsData.add({
-            'group_id': groupId,
-            'user_id': member.userId,
-            'amount': group.contribution,
-            'round': roundNum,
-            'status': 'pending',
-            'due_date': payoutDate.toIso8601String(),
-          });
-        }
+// Create contribution slots for everyone for this round
+for (var member in members) {
+  final isRoundRecipient = member.userId == recipient.userId;
+  contributionsData.add({
+    'group_id': groupId,
+    'user_id': member.userId,
+    'amount': group.contribution,
+    'round': roundNum,
+    // Recipient of the round is skipped (auto-paid)
+    'status': isRoundRecipient ? 'paid' : 'pending',
+    'due_date': payoutDate.toIso8601String(),
+    'paid_at': isRoundRecipient ? DateTime.now().toIso8601String() : null,
+    'recipient_id': recipient.userId,
+  });
+}
       }
 
       // 4. Update Cloud
@@ -402,6 +405,7 @@ class GroupsViewModel extends ChangeNotifier {
   Future<void> sendChatMessage(int groupId, String userId, String userName, String message) async {
     try {
       final messageData = {
+        'id': 0, // Temp ID for instant feedback
         'group_id': groupId,
         'user_id': userId,
         'user_name': userName,
@@ -474,92 +478,51 @@ class GroupsViewModel extends ChangeNotifier {
       
       // 2. Update contribution status to 'paid'
       await _supabaseService.updateContributionStatus(proof.contributionId, 'paid');
+      
+      // 3. Update member stats (Increment sender's paid count)
+      await _supabaseService.updateMemberStats(proof.groupId, proof.senderId, incrementPaid: true);
 
-      // 3. Step 5.2: 20% Fee Logic
-      final double amount = proof.amount;
-      final double creatorFee = amount * 0.10;
-      final double heldSavings = amount * 0.10;
-      final double recipientNet = amount - creatorFee - heldSavings;
-
-      // Record detailed transactions
+      // 3. Simple Transaction Record
       final List<Map<String, dynamic>> transactions = [
         {
           'group_id': proof.groupId,
           'user_id': proof.senderId,
           'type': 'contribution',
-          'amount': amount,
+          'amount': proof.amount,
           'round': proof.round,
           'date': DateTime.now().toIso8601String(),
           'description': 'Verified contribution from ${proof.senderName} for Round ${proof.round}',
         },
-        {
-          'group_id': proof.groupId,
-          'user_id': group.createdBy,
-          'type': 'fee_creator',
-          'amount': creatorFee,
-          'round': proof.round,
-          'date': DateTime.now().toIso8601String(),
-          'description': '10% Admin Fee from ${proof.senderName}',
-        },
-        {
-          'group_id': proof.groupId,
-          'user_id': proof.senderId,
-          'type': 'held_savings',
-          'amount': heldSavings,
-          'round': proof.round,
-          'date': DateTime.now().toIso8601String(),
-          'description': '10% Held Savings from ${proof.senderName}',
-        },
-        {
-          'group_id': proof.groupId,
-          'user_id': proof.recipientId,
-          'type': 'payout_portion',
-          'amount': recipientNet,
-          'round': proof.round,
-          'date': DateTime.now().toIso8601String(),
-          'description': 'Net payout portion from ${proof.senderName}',
-        },
       ];
-
       await _supabaseService.createTransactions(transactions);
 
-      // Refresh data to check for completion
-      await loadGroupDetails(proof.groupId);
-
       // 4. Cycle Completion Check
+      // We fetch the latest contributions to see if this round is now fully paid
+      await loadGroupDetails(proof.groupId);
       final allContributions = _currentGroupContributions;
-      final isLastRound = group.currentRound == group.maxMembers;
-      final allPaid = allContributions.every((c) => c.status == 'paid');
+      final currentRoundPayments = allContributions.where((c) => c.round == group.currentRound && c.status == 'paid');
+      
+      if (currentRoundPayments.length == group.maxMembers) {
+        // ROUND FINISHED!
+        
+        // A. Increment recipient's received count
+        await _supabaseService.updateMemberStats(group.id, proof.recipientId, incrementReceived: true);
+        
+        // B. Mark current rotation as completed
+        await _supabaseService.updateRotationStatus(group.id, group.currentRound, 'completed');
 
-      if (allPaid && group.groupStatus == 'active') {
-        // Mark group as completed
-        await _supabaseService.updateGroupStatus(group.id, 'completed');
-
-        // Refund held savings to all verified participants
-        // For each member, we create a refund transaction
-        final refundTransactions = _currentGroupMembers.map((member) {
-          final totalHeldForMember = group.contribution * group.maxMembers * 0.10;
-          return {
-            'group_id': group.id,
-            'user_id': member.userId,
-            'type': 'held_refund',
-            'amount': totalHeldForMember,
-            'round': group.maxMembers,
-            'date': DateTime.now().toIso8601String(),
-            'description': 'Cycle Completion: Refund of 10% Held Savings',
-          };
-        }).toList();
-
-        await _supabaseService.createTransactions(refundTransactions);
-        await loadGroupDetails(group.id);
-      } else if (allPaid && !isLastRound) {
-        // If all paid for CURRENT round but not last, increment round
-        // This logic might be handled by another method, but we can do it here too
-        final currentRoundPayments = allContributions.where((c) => c.round == group.currentRound && c.status == 'paid');
-        if (currentRoundPayments.length == group.maxMembers) {
-           await _supabaseService.updateGroupRound(group.id, group.currentRound + 1);
-           await loadGroupDetails(group.id);
+        if (group.currentRound == group.maxMembers) {
+          // Final round finished
+          await _supabaseService.updateGroupStatus(group.id, 'completed');
+        } else {
+          // Move to next round
+          final nextRound = group.currentRound + 1;
+          await _supabaseService.updateGroupRound(group.id, nextRound);
+          await _supabaseService.updateRotationStatus(group.id, nextRound, 'in_progress');
         }
+        
+        // Final reload to sync everything
+        await loadGroupDetails(group.id);
       }
 
       return true;

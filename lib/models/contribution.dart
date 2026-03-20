@@ -7,7 +7,8 @@ class Contribution {
     required this.round,
     required this.status,
     required this.dueDate,
-    required this.paidAt,
+    this.paidAt,
+    this.recipientId,
   });
 
   final int id;
@@ -15,9 +16,10 @@ class Contribution {
   final String userId;
   final double amount;
   final int round;
-  final String status; // 'pending', 'paid', 'late'
+  final String status;
   final DateTime dueDate;
   final DateTime? paidAt;
+  final String? recipientId;
 
   Map<String, dynamic> toMap() {
     return {
@@ -29,6 +31,7 @@ class Contribution {
       'status': status,
       'due_date': dueDate.toIso8601String(),
       'paid_at': paidAt?.toIso8601String(),
+      'recipient_id': recipientId,
     };
   }
 
@@ -36,14 +39,13 @@ class Contribution {
     return Contribution(
       id: map['id'] as int,
       groupId: map['group_id'] as int,
-      userId: map['user_id'].toString(),
+      userId: map['user_id'] as String,
       amount: (map['amount'] as num).toDouble(),
       round: map['round'] as int,
       status: map['status'] as String,
       dueDate: DateTime.parse(map['due_date'] as String),
-      paidAt: map['paid_at'] != null
-          ? DateTime.parse(map['paid_at'] as String)
-          : null,
+      paidAt: map['paid_at'] != null ? DateTime.parse(map['paid_at'] as String) : null,
+      recipientId: map['recipient_id'] as String?,
     );
   }
 }

@@ -171,6 +171,34 @@ class SupabaseService {
     }).eq('id', proofId);
   }
 
+  Future<void> updateMemberStats(int groupId, String userId, {bool incrementPaid = false, bool incrementReceived = false}) async {
+    final member = await _supabase
+        .from('group_members')
+        .select()
+        .eq('group_id', groupId)
+        .eq('user_id', userId)
+        .single();
+    
+    final updates = <String, dynamic>{};
+    if (incrementPaid) updates['paid_contributions'] = (member['paid_contributions'] as int) + 1;
+    if (incrementReceived) updates['received_payouts'] = (member['received_payouts'] as int) + 1;
+    
+    if (updates.isNotEmpty) {
+      await _supabase.from('group_members').update(updates).eq('id', member['id']);
+    }
+  }
+
+  Future<void> updateRotationStatus(int groupId, int round, String status) async {
+    await _supabase
+        .from('round_rotations')
+        .update({
+          'status': status,
+          'completed_at': status == 'completed' ? DateTime.now().toIso8601String() : null,
+        })
+        .eq('group_id', groupId)
+        .eq('round', round);
+  }
+
   Future<void> updateContributionStatus(int contributionId, String status) async {
     await _supabase.from('contributions').update({
       'status': status,
@@ -241,7 +269,6 @@ class SupabaseService {
     return _supabase
         .from('group_chat')
         .stream(primaryKey: ['id'])
-        .eq('group_id', groupId)
-        .order('timestamp');
+        .eq('group_id', groupId);
   }
 }

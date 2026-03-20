@@ -350,11 +350,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     backgroundImage: _newProfilePicture != null
                         ? FileImage(File(_newProfilePicture!))
                         : (user.profilePicture != null
-                              ? FileImage(File(user.profilePicture!))
-                              : null),
-                    child:
-                        user.profilePicture == null &&
-                            _newProfilePicture == null
+                            ? (user.profilePicture!.startsWith('http')
+                                ? NetworkImage(user.profilePicture!) as ImageProvider
+                                : FileImage(File(user.profilePicture!)))
+                            : null),
+                    child: user.profilePicture == null && _newProfilePicture == null
                         ? Text(
                             _getInitials(user.fullName),
                             style: TextStyle(
