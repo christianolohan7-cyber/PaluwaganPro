@@ -462,9 +462,21 @@ for (var member in members) {
   }) async {
     _setLoading(true);
     try {
+      String? remoteUrl = screenshotPath;
+
+      // Upload screenshot to Supabase Storage if it's a local file
+      if (!screenshotPath.startsWith('http')) {
+        final fileName = 'proof_${groupId}_${contributionId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        remoteUrl = await _supabaseService.uploadFile(
+          bucket: 'payment-proofs',
+          filePath: screenshotPath,
+          remotePath: '$senderId/$fileName',
+        );
+      }
+
       final proofData = {
-        'contribution_id': contributionId,
         'group_id': groupId,
+        'contribution_id': contributionId,
         'sender_id': senderId,
         'sender_name': senderName,
         'recipient_id': recipientId,
@@ -473,7 +485,7 @@ for (var member in members) {
         'gcash_name': gcashName,
         'gcash_number': gcashNumber,
         'transaction_no': transactionNo,
-        'screenshot_path': screenshotPath,
+        'screenshot_path': remoteUrl,
         'amount': amount,
         'status': 'pending',
         'submitted_at': DateTime.now().toIso8601String(),

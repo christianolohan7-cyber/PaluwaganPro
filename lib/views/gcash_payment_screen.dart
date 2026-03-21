@@ -246,9 +246,40 @@ class _GcashPaymentScreenState extends State<GcashPaymentScreen> {
                                 context: context,
                                 builder: (context) => AlertDialog(
                                   title: const Text('InstaPay QR Code'),
-                                  content: recipientQrPath!.startsWith('http')
-                                      ? Image.network(recipientQrPath!)
-                                      : Image.file(File(recipientQrPath!)),
+                                content: Container(
+                                  constraints: BoxConstraints(
+                                    maxHeight: MediaQuery.of(context).size.height * 0.5,
+                                  ),
+                                  child: recipientQrPath!.startsWith('http')
+                                      ? Image.network(
+                                          recipientQrPath!,
+                                          fit: BoxFit.contain,
+                                          loadingBuilder: (context, child, loadingProgress) {
+                                            if (loadingProgress == null) return child;
+                                            return const Center(child: CircularProgressIndicator());
+                                          },
+                                          errorBuilder: (context, error, stackTrace) {
+                                            return const Center(
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(Icons.broken_image, size: 48, color: Colors.grey),
+                                                  Text('Failed to load QR code'),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                        )
+                                      : Image.file(
+                                          File(recipientQrPath!),
+                                          fit: BoxFit.contain,
+                                          errorBuilder: (context, error, stackTrace) {
+                                            return const Center(
+                                              child: Text('Local QR code file not found on this device'),
+                                            );
+                                          },
+                                        ),
+                                ),
                                   actions: [
                                     TextButton(
                                       onPressed: () =>

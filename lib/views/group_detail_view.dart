@@ -1820,12 +1820,16 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
     showDialog(
       context: context,
       builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             AppBar(
               title: const Text('Receipt Screenshot', style: TextStyle(fontSize: 16)),
               automaticallyImplyLeading: false,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              ),
               actions: [
                 IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
               ],
@@ -1834,9 +1838,63 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
               constraints: BoxConstraints(
                 maxHeight: MediaQuery.of(context).size.height * 0.7,
               ),
-              child: path.startsWith('http')
-                  ? Image.network(path, fit: BoxFit.contain)
-                  : Image.file(File(path), fit: BoxFit.contain),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: path.startsWith('http')
+                    ? Image.network(
+                        path,
+                        fit: BoxFit.contain,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(20.0),
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.broken_image, size: 64, color: Colors.grey),
+                                SizedBox(height: 12),
+                                Text('Failed to load receipt from cloud'),
+                              ],
+                            ),
+                          );
+                        },
+                      )
+                    : Image.file(
+                        File(path),
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.no_photography, size: 64, color: Colors.grey),
+                                SizedBox(height: 12),
+                                Text(
+                                  'Receipt not found on this device',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                  child: Text(
+                                    'This usually happens because the receipt was uploaded from a different phone.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+              ),
             ),
             const SizedBox(height: 16),
           ],

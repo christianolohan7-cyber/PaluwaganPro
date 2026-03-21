@@ -63,7 +63,7 @@ create table public.groups (
   join_code text null,
   status text null default 'active'::text,
   group_status text null default 'pending'::text,
-  current_round integer null default 1,
+  current_round integer null default 0,
   created_at timestamp with time zone not null default timezone ('utc'::text, now()),
   constraint groups_pkey primary key (id),
   constraint groups_join_code_key unique (join_code),
