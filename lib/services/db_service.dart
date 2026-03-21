@@ -21,7 +21,7 @@ class DbService {
 
     return openDatabase(
       dbPath,
-      version: 11, // Increment version for recipient_id in contributions
+      version: 12, // Increment version for profile_picture in group_members
       onCreate: (db, version) async {
         await _createSchema(db);
         await _seedInitialData(db);
@@ -37,6 +37,7 @@ class DbService {
         if (oldVersion < 9) await _upgradeToV9(db);
         if (oldVersion < 10) await _upgradeToV10(db);
         if (oldVersion < 11) await _upgradeToV11(db);
+        if (oldVersion < 12) await _upgradeToV12(db);
       },
     );
   }
@@ -96,6 +97,7 @@ class DbService {
         paid_contributions INTEGER NOT NULL,
         received_payouts INTEGER NOT NULL,
         rotation_order INTEGER NOT NULL,
+        profile_picture TEXT,
         FOREIGN KEY (group_id) REFERENCES groups (id),
         FOREIGN KEY (user_id) REFERENCES users (id),
         UNIQUE(group_id, user_id)
@@ -529,6 +531,15 @@ class DbService {
       print('Added recipient_id column to contributions table');
     } catch (e) {
       print('recipient_id column migration note: $e');
+    }
+  }
+
+  Future<void> _upgradeToV12(Database db) async {
+    try {
+      await db.execute('ALTER TABLE group_members ADD COLUMN profile_picture TEXT;');
+      print('Added profile_picture column to group_members table');
+    } catch (e) {
+      print('profile_picture column migration note: $e');
     }
   }
 

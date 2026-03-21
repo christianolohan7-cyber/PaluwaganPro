@@ -88,7 +88,12 @@ class _VerifyPaymentScreenState extends State<VerifyPaymentScreen> {
             onPressed: () async {
               if (reasonController.text.trim().isEmpty) return;
 
-              Navigator.of(context).pop();
+              // Store a reference to the ScaffoldMessenger before the dialog is dismissed
+              final messenger = ScaffoldMessenger.of(context);
+              final navigator = Navigator.of(context);
+
+              // Close the dialog
+              navigator.pop();
 
               setState(() {
                 _isProcessing = true;
@@ -108,13 +113,16 @@ class _VerifyPaymentScreenState extends State<VerifyPaymentScreen> {
               });
 
               if (success) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                messenger.showSnackBar(
                   const SnackBar(
                     content: Text('Payment rejected successfully'),
                     backgroundColor: Colors.orange,
                   ),
                 );
-                Navigator.of(context).pop(); // Go back to group detail
+                if (mounted) {
+                  // Use the screen's navigator to go back to group detail
+                  Navigator.pop(this.context);
+                }
               } else {
                 setState(() {
                   _errorMessage = groupsVm.errorMessage ?? 'Failed to reject payment';

@@ -157,7 +157,11 @@ class SupabaseService {
   }
 
   Future<void> submitPaymentProof(Map<String, dynamic> proofData) async {
-    await _supabase.from('payment_proofs').insert(proofData);
+    // Use upsert with contribution_id as the unique constraint to allow resubmission
+    await _supabase.from('payment_proofs').upsert(
+      proofData,
+      onConflict: 'contribution_id',
+    );
   }
 
   Future<void> verifyPayment(int proofId, String verifiedById) async {
