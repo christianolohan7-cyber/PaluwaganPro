@@ -157,7 +157,7 @@ class GroupsViewModel extends ChangeNotifier {
         'join_code': joinCode,
         'status': 'active',
         'group_status': 'pending',
-        'current_round': 1,
+        'current_round': 0, // Initial round is 0 for pending groups
         'created_at': DateTime.now().toIso8601String(),
       };
 
@@ -357,6 +357,7 @@ for (var member in members) {
 
       // 4. Update Cloud
       await _supabaseService.updateGroupStatus(groupId, 'active');
+      await _supabaseService.updateGroupRound(groupId, 1); // Group starts at Round 1
       await _supabaseService.createRoundRotations(rotationsData);
       await _supabaseService.createContributions(contributionsData);
 

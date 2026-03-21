@@ -415,6 +415,73 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Group Completed Banner
+                      if (group.groupStatus == 'completed') ...[
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.green.shade200),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.stars,
+                                size: 48,
+                                color: Colors.green.shade700,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Congratulations!',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green.shade700,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'This paluwagan cycle is fully completed. All members have received their payouts!',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.green.shade800,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Ready for another round? Use the Chat tab to coordinate with your group mates about starting a new group!',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.green.shade700,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  _tabController.animateTo(3); // Go to Chat tab
+                                },
+                                icon: const Icon(Icons.chat_bubble_outline),
+                                label: const Text('DISCUSS NEXT PALUWAGAN'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green.shade600,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+
                       // Group Status Banner
                       if (group.groupStatus == 'pending') ...[
                         Container(
@@ -666,7 +733,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                             context,
                             label: 'Current Round',
                             value: group.groupStatus == 'pending'
-                                ? 'Not Started'
+                                ? 'Waiting to Start'
                                 : '$actualCurrentRound/$totalRounds',
                             icon: Icons.timelapse_outlined,
                             color: colorScheme.primary,
@@ -1941,65 +2008,49 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
         ),
 
         // Message Input
-        if (!isGroupCompleted)
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -5),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _chatController,
-                    decoration: InputDecoration(
-                      hintText: 'Type a message...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey.shade100,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                    ),
-                    onSubmitted: (_) => _sendMessage(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                FloatingActionButton(
-                  onPressed: _sendMessage,
-                  mini: true,
-                  backgroundColor: colorScheme.primary,
-                  child: const Icon(Icons.send, color: Colors.white),
-                ),
-              ],
-            ),
-          )
-        else
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            color: Colors.grey.shade100,
-            width: double.infinity,
-            child: const Text(
-              'This group is completed. Chat is read-only.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 13,
-                fontStyle: FontStyle.italic,
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -5),
               ),
-            ),
+            ],
           ),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _chatController,
+                  decoration: InputDecoration(
+                    hintText: 'Type a message...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                  ),
+                  onSubmitted: (_) => _sendMessage(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              FloatingActionButton(
+                onPressed: _sendMessage,
+                mini: true,
+                backgroundColor: colorScheme.primary,
+                child: const Icon(Icons.send, color: Colors.white),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }

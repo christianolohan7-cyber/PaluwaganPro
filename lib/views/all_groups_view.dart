@@ -200,7 +200,9 @@ class AllGroupsPage extends StatelessWidget {
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      'Round ${g.currentRound}/${g.maxMembers}',
+                                      g.groupStatus == 'pending'
+                                          ? 'Waiting to Start'
+                                          : 'Round ${g.currentRound}/${g.maxMembers}',
                                       style: const TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500,

@@ -683,7 +683,9 @@ class _HomeContentState extends State<HomeContent> {
                     ),
                   ),
                   Text(
-                    'Round ${group.currentRound}/${group.maxMembers}',
+                    group.groupStatus == 'pending'
+                        ? 'Waiting to Start'
+                        : 'Round ${group.currentRound}/${group.maxMembers}',
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
