@@ -263,33 +263,33 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                       indicatorWeight: 3,
                     ),
                   ),
-              body: TabBarView(
-                controller: _tabController,
-                children: [
-                  // Overview Tab
-                  _buildOverviewTab(context, group, members, progress, isCreator, isGroupFull),
+                  body: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      // Overview Tab
+                      _buildOverviewTab(context, group, members, progress, isCreator, isGroupFull),
 
-                  // Members Tab
-                  _buildMembersTab(context, members, group),
+                      // Members Tab
+                      _buildMembersTab(context, members, group),
 
-                  // Schedule Tab
-                  _buildScheduleTab(context, group),
+                      // Schedule Tab
+                      _buildScheduleTab(context, group),
 
-                  // Chat Tab
-                  _buildChatTab(
-                    context,
-                    authVm.currentUser!,
-                    isGroupCompleted,
+                      // Chat Tab
+                      _buildChatTab(
+                        context,
+                        authVm.currentUser!,
+                        isGroupCompleted,
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             );
-          }
+          },
         );
-      }
+      },
     );
-  }
-);
   }
 
   Widget _buildMemberAvatar({
@@ -948,17 +948,38 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
       ),
     );
 
-    // Check if payment is available (group is active and it's the current round)
-    // Use actualCurrentRound for more dynamic availability
-    final isPaymentAvailable =
-        group.groupStatus == 'active' &&
-        contribution.round == actualCurrentRound &&
-        contribution.status == 'pending';
-
-    // Check if payment has already been submitted
-    final hasExistingPayment = groupsVm.pendingPayments.any(
+    // Find proof if exists
+    final proof = groupsVm.pendingPayments.firstWhere(
       (p) => p.contributionId == contribution.id,
+      orElse: () => PaymentProof(
+        id: 0,
+        contributionId: 0,
+        groupId: 0,
+        senderId: '',
+        senderName: '',
+        recipientId: '',
+        recipientName: '',
+        round: 0,
+        gcashName: '',
+        gcashNumber: '',
+        transactionNo: '',
+        screenshotPath: '',
+        amount: 0,
+        status: 'none',
+        submittedAt: DateTime.now(),
+      ),
     );
+
+    // Check if payment is available (group is active and it's the current round)
+    // OR if the previous payment was rejected
+    final isRejected = proof.status == 'rejected';
+    final isPaymentAvailable =
+        (group.groupStatus == 'active' &&
+        contribution.round == actualCurrentRound &&
+        contribution.status == 'pending') || isRejected;
+
+    // Check if payment has already been submitted and is pending
+    final isSubmitted = proof.status == 'pending';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -967,27 +988,34 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isPaymentAvailable
-              ? colorScheme.primary
-              : Colors.grey.shade300,
-          width: isPaymentAvailable ? 1.5 : 1,
+          color: isRejected
+              ? Colors.red
+              : (isPaymentAvailable ? colorScheme.primary : Colors.grey.shade300),
+          width: (isPaymentAvailable || isRejected) ? 1.5 : 1,
         ),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: isPaymentAvailable
-                      ? colorScheme.primary.withOpacity(0.1)
-                      : Colors.grey.shade100,
+                  color: isRejected
+                      ? Colors.red.shade50
+                      : (isPaymentAvailable
+                          ? colorScheme.primary.withOpacity(0.1)
+                          : Colors.grey.shade100),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
-                  isPaymentAvailable ? Icons.payment : Icons.pending_actions,
-                  color: isPaymentAvailable ? colorScheme.primary : Colors.grey,
+                  isRejected
+                      ? Icons.error_outline
+                      : (isPaymentAvailable ? Icons.payment : Icons.pending_actions),
+                  color: isRejected
+                      ? Colors.red
+                      : (isPaymentAvailable ? colorScheme.primary : Colors.grey),
                 ),
               ),
               const SizedBox(width: 12),
@@ -1023,7 +1051,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                     ),
                   ),
                   const SizedBox(height: 4),
-                  if (hasExistingPayment)
+                  if (isSubmitted)
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
@@ -1039,6 +1067,25 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: Colors.orange.shade700,
+                        ),
+                      ),
+                    )
+                  else if (isRejected)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        'Rejected',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.red.shade700,
                         ),
                       ),
                     )
@@ -1088,6 +1135,65 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
               ),
             ],
           ),
+          if (isRejected && proof.rejectionReason != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red.shade100),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Rejection Reason:',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                    ),
+                  ),
+                  Text(
+                    proof.rejectionReason!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.red.shade700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => GcashPaymentScreen(
+                              group: group,
+                              contribution: contribution,
+                              round: contribution.round,
+                              recipientId: currentRound.recipientId,
+                              recipientName: currentRound.recipientName,
+                              amount: contribution.amount,
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.refresh, size: 16),
+                      label: const Text('RESUBMIT PAYMENT'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1562,16 +1668,34 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                                   // Check if current user is the recipient of THIS round
                                   final isUserTheRecipient = rotation.recipientId == currentUser?.id;
                                   
-                                  final canPay = isUserSlot && !isRecipientSlot && isCurrent && contribution.status == 'pending' && proof.status == 'none';
+                                  final canPay = isUserSlot && !isRecipientSlot && isCurrent && contribution.status == 'pending' && (proof.status == 'none' || proof.status == 'rejected');
                                   final canVerify = isUserTheRecipient && isCurrent && proof.status == 'pending';
 
-                                  Color cStatusColor = contribution.status == 'paid' ? Colors.green : (proof.status == 'pending' ? Colors.orange : Colors.red);
-                                  String cStatusText = contribution.status == 'paid' ? (isRecipientSlot ? "Recipient (Skipped)" : "Paid") : (proof.status == 'pending' ? "Pending" : "Unpaid");
+                                  Color cStatusColor;
+                                  String cStatusText;
+
+                                  if (contribution.status == 'paid') {
+                                    cStatusColor = Colors.green;
+                                    cStatusText = isRecipientSlot ? "Recipient (Skipped)" : "Paid";
+                                  } else if (proof.status == 'pending') {
+                                    cStatusColor = Colors.orange;
+                                    cStatusText = "Pending";
+                                  } else if (proof.status == 'rejected') {
+                                    cStatusColor = Colors.red;
+                                    cStatusText = "Rejected";
+                                  } else {
+                                    cStatusColor = Colors.red;
+                                    cStatusText = "Unpaid";
+                                  }
 
                                   return Container(
                                     margin: const EdgeInsets.only(bottom: 8),
                                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                    decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(8)),
+                                    decoration: BoxDecoration(
+                                      color: proof.status == 'rejected' ? Colors.red.withOpacity(0.05) : Colors.grey.shade50, 
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: proof.status == 'rejected' ? Border.all(color: Colors.red.withOpacity(0.2)) : null,
+                                    ),
                                     child: Row(
                                       children: [
                                         Expanded(
@@ -1585,8 +1709,12 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                                         ),
                                         if (proof.status != 'none')
                                           IconButton(
-                                            onPressed: () => _showReceiptImage(context, proof.screenshotPath),
-                                            icon: const Icon(Icons.receipt_long, size: 18, color: Colors.blue),
+                                            onPressed: () => _showReceiptImage(context, proof),
+                                            icon: Icon(
+                                              Icons.receipt_long, 
+                                              size: 18, 
+                                              color: proof.status == 'rejected' ? Colors.red : Colors.blue
+                                            ),
                                             padding: EdgeInsets.zero,
                                             constraints: const BoxConstraints(),
                                           ),
@@ -1596,7 +1724,10 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                                             onPressed: () {
                                               Navigator.of(context).push(MaterialPageRoute(builder: (_) => GcashPaymentScreen(group: group, contribution: contribution, round: contribution.round, recipientId: rotation.recipientId, recipientName: rotation.recipientName, amount: contribution.amount)));
                                             },
-                                            child: const Text('PAY', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                            child: Text(
+                                              proof.status == 'rejected' ? 'RE-PAY' : 'PAY', 
+                                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)
+                                            ),
                                           )
                                         else if (canVerify)
                                           TextButton(
@@ -1774,10 +1905,13 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                                     Text('₱${contribution.amount.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                                     Row(
                                       children: [
-                                        if (proof.status == 'pending')
+                                        if (proof.status == 'pending' || proof.status == 'rejected')
                                           IconButton(
-                                            onPressed: () => _showReceiptImage(context, proof.screenshotPath),
-                                            icon: const Icon(Icons.receipt_long, color: Colors.blue),
+                                            onPressed: () => _showReceiptImage(context, proof),
+                                            icon: Icon(
+                                              Icons.receipt_long, 
+                                              color: proof.status == 'rejected' ? Colors.red : Colors.blue
+                                            ),
                                             tooltip: 'View Screenshot',
                                           ),
                                         if (canPay)
@@ -1786,7 +1920,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                                               Navigator.of(context).push(MaterialPageRoute(builder: (_) => GcashPaymentScreen(group: group, contribution: contribution, round: contribution.round, recipientId: currentRotation.recipientId, recipientName: currentRotation.recipientName, amount: contribution.amount)));
                                             },
                                             style: ElevatedButton.styleFrom(backgroundColor: colorScheme.primary, foregroundColor: Colors.white),
-                                            child: const Text('Pay Now'),
+                                            child: Text(proof.status == 'rejected' ? 'Re-Pay' : 'Pay Now'),
                                           ),
                                         if (canVerify)
                                           ElevatedButton(
@@ -1816,7 +1950,8 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
     );
   }
 
-  void _showReceiptImage(BuildContext context, String path) {
+  void _showReceiptImage(BuildContext context, PaymentProof proof) {
+    final String path = proof.screenshotPath;
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -1838,62 +1973,102 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
               constraints: BoxConstraints(
                 maxHeight: MediaQuery.of(context).size.height * 0.7,
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: path.startsWith('http')
-                    ? Image.network(
-                        path,
-                        fit: BoxFit.contain,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(20.0),
-                              child: CircularProgressIndicator(),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: path.startsWith('http')
+                          ? Image.network(
+                              path,
+                              fit: BoxFit.contain,
+                              loadingBuilder: (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return const Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(20.0),
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                );
+                              },
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.broken_image, size: 64, color: Colors.grey),
+                                      SizedBox(height: 12),
+                                      Text('Failed to load receipt from cloud'),
+                                    ],
+                                  ),
+                                );
+                              },
+                            )
+                          : Image.file(
+                              File(path),
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.no_photography, size: 64, color: Colors.grey),
+                                      SizedBox(height: 12),
+                                      const Text(
+                                        'Receipt not found on this device',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
                             ),
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
+                    ),
+                    if (proof.status == 'rejected' && proof.rejectionReason != null) ...[
+                      const Divider(),
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Row(
                               children: [
-                                Icon(Icons.broken_image, size: 64, color: Colors.grey),
-                                SizedBox(height: 12),
-                                Text('Failed to load receipt from cloud'),
-                              ],
-                            ),
-                          );
-                        },
-                      )
-                    : Image.file(
-                        File(path),
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.no_photography, size: 64, color: Colors.grey),
-                                SizedBox(height: 12),
+                                Icon(Icons.cancel, color: Colors.red, size: 20),
+                                SizedBox(width: 8),
                                 Text(
-                                  'Receipt not found on this device',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                                  child: Text(
-                                    'This usually happens because the receipt was uploaded from a different phone.',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                                  'PAYMENT REJECTED',
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
                                   ),
                                 ),
                               ],
                             ),
-                          );
-                        },
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Reason:',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              proof.rejectionReason!,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
+                    ],
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 16),

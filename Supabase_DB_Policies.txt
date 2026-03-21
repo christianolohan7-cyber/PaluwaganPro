@@ -1,0 +1,50 @@
+SUPABASE DATABASE SCHEMA
+
+TABLES:
+contributions
+group_chat
+group_members
+groups
+payment_proofs
+profiles
+round_rotations
+transactions
+==============================================================================
+Supabase RLS Policies					
+Table		Policy Name					Command		Applied To
+contributions	Allow authenticated read contributions		SELECT		public
+contributions	Allow recipients to update contributions	UPDATE		authenticated
+contributions	Enable insert for authenticated users only	INSERT		authenticated
+contributions	Enable select for members			SELECT		authenticated
+contributions	Enable update for creator			UPDATE		authenticated
+contributions	Members can view contributions			SELECT		public
+contributions	Users can update their own contributions	UPDATE		public
+group_chat	Allow authenticated insert chats		INSERT		public
+group_chat	Allow authenticated read chats			SELECT		public
+group_members	Allow deletion of group members			DELETE		public
+group_members	Allow members to leave groups			DELETE		public
+group_members	Allow members to update stats			UPDATE		authenticated
+group_members	allow_insert_members				INSERT		public
+group_members	allow_select_members				SELECT		public
+groups		Allow creators to delete their groups		DELETE		public
+groups		Allow members to update group details		UPDATE		authenticated
+groups		allow_insert_groups				INSERT		public
+groups		allow_select_groups				SELECT		public
+payment_proofs	Everyone can view proofs			SELECT		authenticated
+payment_proofs	Recipients can verify their own received proofs	UPDATE		authenticated
+payment_proofs	Users can upload their own proofs		INSERT		authenticated
+profiles	Allow profile creation				INSERT		public
+profiles	Profiles are viewable by everyone		SELECT		public
+profiles	Public profiles are viewable by everyone	SELECT		public
+profiles	Users can update own profile			UPDATE		public
+profiles	Users can update their own profile		UPDATE		public
+profiles	Users can view their own profile		SELECT		public
+round_rotations	Allow authenticated read rotations		SELECT		public
+round_rotations	Allow recipients to update rotation status	UPDATE		authenticated
+round_rotations	Enable insert for authenticated users only	INSERT		authenticated
+round_rotations	Enable select for members			SELECT		authenticated
+round_rotations	Enable update for creator			UPDATE		authenticated
+round_rotations	Members can view rotations			SELECT		public
+transactions	Allow authenticated read transactions		SELECT		public
+transactions	Enable insert for authenticated users only	INSERT		authenticated
+transactions	Enable select for members			SELECT		authenticated

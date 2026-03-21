@@ -101,20 +101,20 @@ class _VerifyPaymentScreenState extends State<VerifyPaymentScreen> {
                 reasonController.text.trim(),
               );
 
+              if (!mounted) return;
+
               setState(() {
                 _isProcessing = false;
               });
 
-              if (!mounted) return;
-
               if (success) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Payment rejected'),
+                    content: Text('Payment rejected successfully'),
                     backgroundColor: Colors.orange,
                   ),
                 );
-                Navigator.of(context).pop();
+                Navigator.of(context).pop(); // Go back to group detail
               } else {
                 setState(() {
                   _errorMessage = groupsVm.errorMessage ?? 'Failed to reject payment';

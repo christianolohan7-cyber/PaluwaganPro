@@ -475,8 +475,8 @@ for (var member in members) {
       }
 
       final proofData = {
+        'contribution_id': contributionId, // This is our unique key for the upsert
         'group_id': groupId,
-        'contribution_id': contributionId,
         'sender_id': senderId,
         'sender_name': senderName,
         'recipient_id': recipientId,
