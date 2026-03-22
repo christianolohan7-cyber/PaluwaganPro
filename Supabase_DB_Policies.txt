@@ -5,6 +5,7 @@ contributions
 group_chat
 group_members
 groups
+notifications
 payment_proofs
 profiles
 round_rotations
@@ -48,3 +49,5 @@ round_rotations	Members can view rotations			SELECT		public
 transactions	Allow authenticated read transactions		SELECT		public
 transactions	Enable insert for authenticated users only	INSERT		authenticated
 transactions	Enable select for members			SELECT		authenticated
+notifications	Users can mark own notifications as read	UPDATE		authenticated
+notifications	Users can view own notifications		SELECT		authenticated
