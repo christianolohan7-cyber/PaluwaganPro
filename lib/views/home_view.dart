@@ -62,6 +62,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final notifVm = context.watch<NotificationViewModel>();
 
     return Scaffold(
       appBar: AppBar(
@@ -87,15 +88,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
         selectedItemColor: colorScheme.primary,
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
-        items: const [
+        items: [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.notifications_outlined),
-            activeIcon: Icon(Icons.notifications),
+            icon: _NotificationNavIcon(
+              icon: Icons.notifications_outlined,
+              unreadCount: notifVm.unreadCount,
+            ),
+            activeIcon: _NotificationNavIcon(
+              icon: Icons.notifications,
+              unreadCount: notifVm.unreadCount,
+            ),
             label: 'Notifications',
           ),
           BottomNavigationBarItem(
@@ -144,13 +151,55 @@ class NotificationsScreenWrapper extends StatelessWidget {
     final authVm = context.watch<AuthViewModel>();
     final notifVm = context.watch<NotificationViewModel>();
 
-    if (authVm.currentUser != null && notifVm.notifications.isEmpty) {
+    if (authVm.currentUser != null &&
+        notifVm.activeUserId != authVm.currentUser!.id) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         notifVm.loadUserNotifications(authVm.currentUser!.id);
+        notifVm.startNotificationsStream(authVm.currentUser!.id);
       });
     }
 
     return const NotificationsScreen();
+  }
+}
+
+class _NotificationNavIcon extends StatelessWidget {
+  const _NotificationNavIcon({required this.icon, required this.unreadCount});
+
+  final IconData icon;
+  final int unreadCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Icon(icon),
+        if (unreadCount > 0)
+          Positioned(
+            right: -8,
+            top: -4,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.rectangle,
+                borderRadius: BorderRadius.all(Radius.circular(10)),
+              ),
+              constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+              child: Text(
+                unreadCount > 99 ? '99+' : '$unreadCount',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }
 
@@ -230,8 +279,9 @@ class _HomeContentState extends State<HomeContent> {
     return StreamBuilder<List<Map<String, dynamic>>>(
       stream: groupsVm.streamGroups(authVm.currentUser!.id),
       builder: (context, snapshot) {
-        final groups = snapshot.data?.map((g) => PaluwaganGroup.fromMap(g)).toList() 
-            ?? groupsVm.groups;
+        final groups =
+            snapshot.data?.map((g) => PaluwaganGroup.fromMap(g)).toList() ??
+            groupsVm.groups;
 
         final activeGroups = groups.length;
         final nextPayout = groups.isNotEmpty
@@ -267,7 +317,10 @@ class _HomeContentState extends State<HomeContent> {
                     children: [
                       const Text(
                         'Your Current Group',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       if (groups.isNotEmpty)
                         TextButton(
@@ -315,7 +368,7 @@ class _HomeContentState extends State<HomeContent> {
             ),
           ),
         );
-      }
+      },
     );
   }
 
@@ -375,21 +428,23 @@ class _HomeContentState extends State<HomeContent> {
     ColorScheme colorScheme,
   ) {
     PaluwaganGroup? nearestGroup;
-    
+
     // Only show next payment for groups that have actually started (active status)
-    final startedGroups = groups.where((g) => g.groupStatus == 'active').toList();
-    
+    final startedGroups = groups
+        .where((g) => g.groupStatus == 'active')
+        .toList();
+
     if (startedGroups.isNotEmpty) {
       // Find the group with the earliest payout date among started groups
       final minDate = startedGroups
           .map((g) => g.nextPayoutDate)
           .reduce((a, b) => a.isBefore(b) ? a : b);
-          
+
       nearestGroup = startedGroups.firstWhere(
         (g) => g.nextPayoutDate == minDate,
         orElse: () => startedGroups.first,
       );
-      
+
       // Update nextPayout to use the date from started groups
       nextPayout = minDate;
     } else {
@@ -665,20 +720,24 @@ class _HomeContentState extends State<HomeContent> {
                       color: group.groupStatus == 'active'
                           ? colorScheme.primary.withOpacity(0.08)
                           : (group.groupStatus == 'completed'
-                              ? Colors.green.withOpacity(0.08)
-                              : Colors.grey.withOpacity(0.08)),
+                                ? Colors.green.withOpacity(0.08)
+                                : Colors.grey.withOpacity(0.08)),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       group.groupStatus == 'active'
                           ? 'Active'
-                          : (group.groupStatus == 'completed' ? 'Completed' : 'Pending'),
+                          : (group.groupStatus == 'completed'
+                                ? 'Completed'
+                                : 'Pending'),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: group.groupStatus == 'active'
                             ? colorScheme.primary
-                            : (group.groupStatus == 'completed' ? Colors.green : Colors.grey),
+                            : (group.groupStatus == 'completed'
+                                  ? Colors.green
+                                  : Colors.grey),
                       ),
                     ),
                   ),

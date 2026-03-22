@@ -60,7 +60,7 @@ class SupabaseService {
         .select()
         .eq('id', userId)
         .maybeSingle();
-    
+
     if (response == null) return null;
     return user_model.User.fromMap(response);
   }
@@ -72,16 +72,20 @@ class SupabaseService {
     required String remotePath,
   }) async {
     final file = File(filePath);
-    await _supabase.storage.from(bucket).upload(
-      remotePath,
-      file,
-      fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
-    );
+    await _supabase.storage
+        .from(bucket)
+        .upload(
+          remotePath,
+          file,
+          fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
+        );
     return _supabase.storage.from(bucket).getPublicUrl(remotePath);
   }
 
   // --- GROUP METHODS ---
-  Future<Map<String, dynamic>> createGroup(Map<String, dynamic> groupData) async {
+  Future<Map<String, dynamic>> createGroup(
+    Map<String, dynamic> groupData,
+  ) async {
     return await _supabase.from('groups').insert(groupData).select().single();
   }
 
@@ -98,7 +102,7 @@ class SupabaseService {
   }
 
   Future<List<Map<String, dynamic>>> getUserGroups(String userId) async {
-    // Since creators are added as members, we just need to find groups 
+    // Since creators are added as members, we just need to find groups
     // where the user is in the group_members table.
     final response = await _supabase
         .from('groups')
@@ -108,9 +112,11 @@ class SupabaseService {
   }
 
   Future<Map<String, dynamic>?> findGroupByCode(String joinCode) async {
-    final response = await _supabase
-        .rpc('find_group_by_code', params: {'join_code_param': joinCode});
-    
+    final response = await _supabase.rpc(
+      'find_group_by_code',
+      params: {'join_code_param': joinCode},
+    );
+
     if (response == null || (response as List).isEmpty) return null;
     return response[0] as Map<String, dynamic>;
   }
@@ -118,13 +124,19 @@ class SupabaseService {
   Future<Map<String, dynamic>> getGroupDetails(int groupId) async {
     final response = await _supabase
         .from('groups')
-        .select('*, group_members(*, profiles(profile_picture)), round_rotations(*), contributions(*), group_chat(*, profiles(profile_picture)), payment_proofs(*)')
+        .select(
+          '*, group_members(*, profiles(profile_picture)), round_rotations(*), contributions(*), group_chat(*, profiles(profile_picture)), payment_proofs(*)',
+        )
         .eq('id', groupId)
         .single();
     return response;
   }
 
-  Future<void> updateGroupStatus(int groupId, String status, {bool isFinal = false}) async {
+  Future<void> updateGroupStatus(
+    int groupId,
+    String status, {
+    bool isFinal = false,
+  }) async {
     final updates = {'group_status': status};
     if (isFinal) {
       updates['status'] = 'completed';
@@ -133,22 +145,32 @@ class SupabaseService {
   }
 
   Future<void> updateGroupRound(int groupId, int round) async {
-    await _supabase.from('groups').update({'current_round': round}).eq('id', groupId);
+    await _supabase
+        .from('groups')
+        .update({'current_round': round})
+        .eq('id', groupId);
   }
 
   Future<void> updateGroupMemberCount(int groupId, int count) async {
-    await _supabase.from('groups').update({'current_members': count}).eq('id', groupId);
+    await _supabase
+        .from('groups')
+        .update({'current_members': count})
+        .eq('id', groupId);
   }
 
   Future<void> deleteGroup(int groupId) async {
     await _supabase.from('groups').delete().eq('id', groupId);
   }
 
-  Future<void> createRoundRotations(List<Map<String, dynamic>> rotations) async {
+  Future<void> createRoundRotations(
+    List<Map<String, dynamic>> rotations,
+  ) async {
     await _supabase.from('round_rotations').insert(rotations);
   }
 
-  Future<void> createContributions(List<Map<String, dynamic>> contributions) async {
+  Future<void> createContributions(
+    List<Map<String, dynamic>> contributions,
+  ) async {
     await _supabase.from('contributions').insert(contributions);
   }
 
@@ -158,74 +180,128 @@ class SupabaseService {
 
   Future<void> submitPaymentProof(Map<String, dynamic> proofData) async {
     // Use upsert with contribution_id as the unique constraint to allow resubmission
-    await _supabase.from('payment_proofs').upsert(
-      proofData,
-      onConflict: 'contribution_id',
-    );
+    await _supabase
+        .from('payment_proofs')
+        .upsert(proofData, onConflict: 'contribution_id');
   }
 
   Future<void> verifyPayment(int proofId, String verifiedById) async {
-    await _supabase.from('payment_proofs').update({
-      'status': 'verified',
-      'verified_at': DateTime.now().toIso8601String(),
-      'verified_by_id': verifiedById,
-    }).eq('id', proofId);
+    await _supabase
+        .from('payment_proofs')
+        .update({
+          'status': 'verified',
+          'verified_at': DateTime.now().toIso8601String(),
+          'verified_by_id': verifiedById,
+        })
+        .eq('id', proofId);
   }
 
   Future<void> rejectPayment(int proofId, String reason) async {
-    await _supabase.from('payment_proofs').update({
-      'status': 'rejected',
-      'rejection_reason': reason,
-    }).eq('id', proofId);
+    await _supabase
+        .from('payment_proofs')
+        .update({'status': 'rejected', 'rejection_reason': reason})
+        .eq('id', proofId);
   }
 
-  Future<void> updateMemberStats(int groupId, String userId, {bool incrementPaid = false, bool incrementReceived = false}) async {
+  Future<void> updateMemberStats(
+    int groupId,
+    String userId, {
+    bool incrementPaid = false,
+    bool incrementReceived = false,
+  }) async {
     final member = await _supabase
         .from('group_members')
         .select()
         .eq('group_id', groupId)
         .eq('user_id', userId)
         .single();
-    
+
     final updates = <String, dynamic>{};
-    if (incrementPaid) updates['paid_contributions'] = (member['paid_contributions'] as int) + 1;
-    if (incrementReceived) updates['received_payouts'] = (member['received_payouts'] as int) + 1;
-    
+    if (incrementPaid)
+      updates['paid_contributions'] = (member['paid_contributions'] as int) + 1;
+    if (incrementReceived)
+      updates['received_payouts'] = (member['received_payouts'] as int) + 1;
+
     if (updates.isNotEmpty) {
-      await _supabase.from('group_members').update(updates).eq('id', member['id']);
+      await _supabase
+          .from('group_members')
+          .update(updates)
+          .eq('id', member['id']);
     }
   }
 
-  Future<void> updateRotationStatus(int groupId, int round, String status) async {
+  Future<void> updateRotationStatus(
+    int groupId,
+    int round,
+    String status,
+  ) async {
     await _supabase
         .from('round_rotations')
         .update({
           'status': status,
-          'completed_at': status == 'completed' ? DateTime.now().toIso8601String() : null,
+          'completed_at': status == 'completed'
+              ? DateTime.now().toIso8601String()
+              : null,
         })
         .eq('group_id', groupId)
         .eq('round', round);
   }
 
-  Future<void> updateContributionStatus(int contributionId, String status) async {
-    await _supabase.from('contributions').update({
-      'status': status,
-      'paid_at': status == 'paid' ? DateTime.now().toIso8601String() : null,
-    }).eq('id', contributionId);
+  Future<void> updateContributionStatus(
+    int contributionId,
+    String status,
+  ) async {
+    await _supabase
+        .from('contributions')
+        .update({
+          'status': status,
+          'paid_at': status == 'paid' ? DateTime.now().toIso8601String() : null,
+        })
+        .eq('id', contributionId);
   }
 
   Future<void> createTransaction(Map<String, dynamic> transactionData) async {
     await _supabase.from('transactions').insert(transactionData);
   }
 
-  Future<void> createTransactions(List<Map<String, dynamic>> transactions) async {
+  Future<void> createTransactions(
+    List<Map<String, dynamic>> transactions,
+  ) async {
     await _supabase.from('transactions').insert(transactions);
   }
 
   Future<user_model.User?> getUserById(String userId) async {
-    final response = await _supabase.from('profiles').select().eq('id', userId).maybeSingle();
+    final response = await _supabase
+        .from('profiles')
+        .select()
+        .eq('id', userId)
+        .maybeSingle();
     if (response == null) return null;
     return user_model.User.fromMap(response);
+  }
+
+  Future<List<Map<String, dynamic>>> getNotifications(String userId) async {
+    final response = await _supabase
+        .from('notifications')
+        .select()
+        .eq('user_id', userId)
+        .order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  Stream<List<Map<String, dynamic>>> streamNotifications(String userId) {
+    return _supabase
+        .from('notifications')
+        .stream(primaryKey: ['id'])
+        .eq('user_id', userId)
+        .order('created_at', ascending: false);
+  }
+
+  Future<void> markNotificationAsRead(int notificationId) async {
+    await _supabase
+        .from('notifications')
+        .update({'is_read': true, 'read_at': DateTime.now().toIso8601String()})
+        .eq('id', notificationId);
   }
 
   // --- REAL-TIME STREAMS ---

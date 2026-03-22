@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../viewmodels/notification_viewmodel.dart';
+
+import '../models/notification.dart' as notif_model;
 import '../viewmodels/auth_viewmodel.dart';
+import '../viewmodels/groups_viewmodel.dart';
+import '../viewmodels/notification_viewmodel.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -14,11 +17,38 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   void initState() {
     super.initState();
-    final authVm = context.read<AuthViewModel>();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final authVm = context.read<AuthViewModel>();
+      final notifVm = context.read<NotificationViewModel>();
+      final userId = authVm.currentUser?.id;
+
+      if (userId != null) {
+        await notifVm.loadUserNotifications(userId);
+        await notifVm.startNotificationsStream(userId);
+      }
+    });
+  }
+
+  Future<void> _handleNotificationTap(
+    BuildContext context,
+    notif_model.Notification notification,
+  ) async {
     final notifVm = context.read<NotificationViewModel>();
-    if (authVm.currentUser != null) {
-      notifVm.loadUserNotifications(authVm.currentUser!.id);
+    final groupsVm = context.read<GroupsViewModel>();
+
+    await notifVm.markAsRead(notification.id);
+
+    if (!mounted || notification.groupId == null) {
+      return;
     }
+
+    await groupsVm.loadGroupDetails(notification.groupId!);
+
+    if (!mounted) return;
+
+    Navigator.of(
+      context,
+    ).pushNamed('/group-detail', arguments: notification.groupId);
   }
 
   @override
@@ -62,23 +92,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 );
               }
 
-              return ListView.builder(
-                itemCount: notifVm.notifications.length,
-                itemBuilder: (context, index) {
-                  final notif = notifVm.notifications[index];
-                  return _NotificationTile(
-                    notification: notif,
-                    onTap: () async {
-                      await notifVm.markAsRead(notif.id);
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              NotificationDetailScreen(notification: notif),
-                        ),
-                      );
-                    },
-                  );
+              return RefreshIndicator(
+                onRefresh: () async {
+                  final userId = context.read<AuthViewModel>().currentUser?.id;
+                  if (userId != null) {
+                    await notifVm.loadUserNotifications(userId);
+                  }
                 },
+                child: ListView.builder(
+                  itemCount: notifVm.notifications.length,
+                  itemBuilder: (context, index) {
+                    final notif = notifVm.notifications[index];
+                    return _NotificationTile(
+                      notification: notif,
+                      onTap: () => _handleNotificationTap(context, notif),
+                    );
+                  },
+                ),
               );
             },
           ),
@@ -88,21 +118,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 }
 
-class _NotificationTile extends StatefulWidget {
+class _NotificationTile extends StatelessWidget {
   const _NotificationTile({required this.notification, required this.onTap});
 
-  final dynamic notification;
+  final notif_model.Notification notification;
   final VoidCallback onTap;
 
   @override
-  State<_NotificationTile> createState() => _NotificationTileState();
-}
-
-class _NotificationTileState extends State<_NotificationTile> {
-  @override
   Widget build(BuildContext context) {
-    final isUnread = !widget.notification.isRead;
-    final date = widget.notification.createdAt;
+    final isUnread = !notification.isRead;
+    final date = notification.createdAt;
     final formattedDate = '${date.month}/${date.day}/${date.year}';
 
     return Card(
@@ -122,7 +147,7 @@ class _NotificationTileState extends State<_NotificationTile> {
               )
             : const Icon(Icons.notifications, size: 24, color: Colors.grey),
         title: Text(
-          widget.notification.title,
+          notification.title,
           style: TextStyle(
             fontSize: 16,
             fontWeight: isUnread ? FontWeight.w700 : FontWeight.w600,
@@ -133,7 +158,7 @@ class _NotificationTileState extends State<_NotificationTile> {
           children: [
             const SizedBox(height: 4),
             Text(
-              widget.notification.message,
+              notification.message,
               style: TextStyle(fontSize: 14, color: Colors.grey[700]),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -145,7 +170,7 @@ class _NotificationTileState extends State<_NotificationTile> {
             ),
           ],
         ),
-        onTap: widget.onTap,
+        onTap: onTap,
         trailing: isUnread
             ? Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -168,11 +193,10 @@ class _NotificationTileState extends State<_NotificationTile> {
   }
 }
 
-// SIMPLIFIED: Plain text view only
 class NotificationDetailScreen extends StatelessWidget {
-  final dynamic notification;
-
   const NotificationDetailScreen({super.key, required this.notification});
+
+  final notif_model.Notification notification;
 
   @override
   Widget build(BuildContext context) {
@@ -197,7 +221,6 @@ class NotificationDetailScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Title
               Text(
                 notification.title,
                 style: const TextStyle(
@@ -205,35 +228,23 @@ class NotificationDetailScreen extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 8),
-
-              // Date
               Text(
                 '$formattedDate at $formattedTime',
                 style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               ),
-
               const SizedBox(height: 24),
-
-              // Full Message
               Text(
                 notification.message,
                 style: const TextStyle(fontSize: 16, height: 1.5),
               ),
-
               const SizedBox(height: 16),
-
-              // Group ID (if available) - simple text only
               if (notification.groupId != null)
                 Text(
                   'Group ID: ${notification.groupId}',
                   style: const TextStyle(fontSize: 14, color: Colors.grey),
                 ),
-
               const SizedBox(height: 16),
-
-              // Type - simple text only
               Text(
                 'Type: ${notification.type.replaceAll('_', ' ')}',
                 style: const TextStyle(fontSize: 14, color: Colors.grey),

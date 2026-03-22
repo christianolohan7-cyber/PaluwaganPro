@@ -21,7 +21,7 @@ import 'views/join_group_view.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   await Supabase.initialize(
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
@@ -47,7 +47,7 @@ class PaluwaganProApp extends StatelessWidget {
           create: (_) => GroupsViewModel(DbService.instance, supabaseService),
         ),
         ChangeNotifierProvider(
-          create: (_) => NotificationViewModel(DbService.instance),
+          create: (_) => NotificationViewModel(supabaseService),
         ),
       ],
       child: MaterialApp(
