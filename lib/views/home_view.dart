@@ -242,6 +242,7 @@ class HomeContent extends StatefulWidget {
 class _HomeContentState extends State<HomeContent> {
   String _quote = "Loading daily motivation...";
   final _quoteService = QuoteService();
+  _HomeGroupTab _selectedGroupTab = _HomeGroupTab.active;
 
   @override
   void initState() {
@@ -284,10 +285,22 @@ class _HomeContentState extends State<HomeContent> {
         final groups =
             snapshot.data?.map((g) => PaluwaganGroup.fromMap(g)).toList() ??
             groupsVm.groups;
+        final visibleGroups = groups
+            .where((g) => g.groupStatus != 'completed')
+            .toList();
+        final activeVisibleGroups = visibleGroups
+            .where((g) => g.groupStatus == 'active')
+            .toList();
+        final pendingGroups = visibleGroups
+            .where((g) => g.groupStatus == 'pending')
+            .toList();
+        final completedGroups = groups
+            .where((g) => g.groupStatus == 'completed')
+            .toList();
 
-        final activeGroups = groups.length;
-        final nextPayout = groups.isNotEmpty
-            ? groups
+        final activeGroups = activeVisibleGroups.length;
+        final nextPayout = activeVisibleGroups.isNotEmpty
+            ? activeVisibleGroups
                   .map((g) => g.nextPayoutDate)
                   .reduce((a, b) => a.isBefore(b) ? a : b)
             : null;
@@ -309,61 +322,27 @@ class _HomeContentState extends State<HomeContent> {
                   _buildHighlightedSummaryCards(
                     context,
                     activeGroups,
-                    groups,
+                    activeVisibleGroups,
                     nextPayout,
                     colorScheme,
                   ),
                   const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Your Current Group',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      if (groups.isNotEmpty)
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context)
-                                .push(
-                                  MaterialPageRoute(
-                                    builder: (_) => const AllGroupsPage(),
-                                  ),
-                                )
-                                .then((_) {
-                                  _refreshData();
-                                });
-                          },
-                          style: TextButton.styleFrom(
-                            minimumSize: Size.zero,
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: const Text(
-                            'View All',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                    ],
+                  _buildGroupNavbar(
+                    context,
+                    activeCount: activeVisibleGroups.length,
+                    pendingCount: pendingGroups.length,
+                    completedCount: completedGroups.length,
+                    hasVisibleGroups: visibleGroups.isNotEmpty,
                   ),
                   const SizedBox(height: 12),
-                  if (groups.isEmpty)
-                    _buildEmptyGroupsState(colorScheme)
-                  else if (groupsVm.isLoading && groups.isEmpty)
-                    const Center(child: CircularProgressIndicator())
-                  else
-                    Column(
-                      children: groups
-                          .take(1)
-                          .map((g) => _buildGroupCard(context, g, colorScheme))
-                          .toList(),
-                    ),
+                  _buildCurrentTabContent(
+                    context,
+                    colorScheme,
+                    groupsVm,
+                    activeVisibleGroups: activeVisibleGroups,
+                    pendingGroups: pendingGroups,
+                    completedGroups: completedGroups,
+                  ),
                   const SizedBox(height: 24),
                 ],
               ),
@@ -656,6 +635,612 @@ class _HomeContentState extends State<HomeContent> {
     );
   }
 
+  Widget _buildNoCurrentGroupsState(
+    ColorScheme colorScheme, {
+    bool hasPendingGroups = false,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.inventory_2_outlined,
+              size: 48,
+              color: colorScheme.primary.withOpacity(0.6),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'No Current Groups',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            hasPendingGroups
+                ? 'Your waiting-to-start groups are listed below, and completed cycles are in the Completed page.'
+                : 'Your completed paluwagan cycles are available in the Completed page.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey[600], fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPendingEmptyState(ColorScheme colorScheme) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE59F1C).withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.hourglass_empty_rounded,
+              size: 48,
+              color: Color(0xFFB77900),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'No Pending Groups',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Groups that are waiting to start will appear here.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey[600], fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompletedEmptyState(ColorScheme colorScheme) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.green.withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.task_alt_rounded,
+              size: 48,
+              color: Colors.green,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'No Completed Groups',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Completed paluwagan cycles will appear here.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey[600], fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(
+    BuildContext context, {
+    required String title,
+    required int count,
+    required IconData icon,
+    required Color accentColor,
+    List<_HeaderAction> actions = const [],
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: accentColor.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(icon, color: accentColor, size: 20),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Row(
+            children: [
+              Flexible(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: accentColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  '$count',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: accentColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (actions.isNotEmpty) ...[
+          const SizedBox(width: 8),
+          Wrap(
+            spacing: 8,
+            children: actions
+                .map(
+                  (action) => InkWell(
+                    onTap: action.onTap,
+                    borderRadius: BorderRadius.circular(999),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(action.icon, size: 16, color: Colors.grey[700]),
+                          const SizedBox(width: 6),
+                          Text(
+                            action.label,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[800],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildGroupNavbar(
+    BuildContext context, {
+    required int activeCount,
+    required int pendingCount,
+    required int completedCount,
+    required bool hasVisibleGroups,
+  }) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _buildNavChip(
+            icon: Icons.bolt_rounded,
+            label: 'Active',
+            count: activeCount,
+            isSelected: _selectedGroupTab == _HomeGroupTab.active,
+            onTap: () {
+              setState(() {
+                _selectedGroupTab = _HomeGroupTab.active;
+              });
+            },
+          ),
+          const SizedBox(width: 10),
+          _buildNavChip(
+            icon: Icons.hourglass_top_rounded,
+            label: 'Pending',
+            count: pendingCount,
+            isSelected: _selectedGroupTab == _HomeGroupTab.pending,
+            onTap: () {
+              setState(() {
+                _selectedGroupTab = _HomeGroupTab.pending;
+              });
+            },
+          ),
+          const SizedBox(width: 10),
+          _buildNavChip(
+            icon: Icons.inventory_2_outlined,
+            label: 'Completed',
+            count: completedCount,
+            isSelected: _selectedGroupTab == _HomeGroupTab.completed,
+            onTap: () {
+              setState(() {
+                _selectedGroupTab = _HomeGroupTab.completed;
+              });
+            },
+          ),
+          const SizedBox(width: 10),
+          _buildNavChip(
+            icon: Icons.grid_view_rounded,
+            label: 'All',
+            count: null,
+            isSelected: _selectedGroupTab == _HomeGroupTab.all,
+            onTap: () {
+              setState(() {
+                _selectedGroupTab = _HomeGroupTab.all;
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavChip({
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required VoidCallback? onTap,
+    int? count,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(999),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? colorScheme.primary.withOpacity(0.12)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: isSelected
+                ? colorScheme.primary.withOpacity(0.35)
+                : Colors.grey.shade300,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: onTap == null
+                  ? Colors.grey
+                  : (isSelected ? colorScheme.primary : Colors.grey.shade700),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: onTap == null
+                    ? Colors.grey
+                    : (isSelected ? colorScheme.primary : Colors.grey.shade800),
+              ),
+            ),
+            if (count != null) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? colorScheme.primary.withOpacity(0.14)
+                      : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  '$count',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: onTap == null
+                        ? Colors.grey
+                        : (isSelected
+                              ? colorScheme.primary
+                              : Colors.grey.shade700),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCurrentTabContent(
+    BuildContext context,
+    ColorScheme colorScheme,
+    GroupsViewModel groupsVm, {
+    required List<PaluwaganGroup> activeVisibleGroups,
+    required List<PaluwaganGroup> pendingGroups,
+    required List<PaluwaganGroup> completedGroups,
+  }) {
+    final currentGroups = switch (_selectedGroupTab) {
+      _HomeGroupTab.active => activeVisibleGroups,
+      _HomeGroupTab.pending => pendingGroups,
+      _HomeGroupTab.completed => completedGroups,
+      _HomeGroupTab.all => [...activeVisibleGroups, ...pendingGroups, ...completedGroups],
+    };
+
+    if (currentGroups.isEmpty) {
+      if (_selectedGroupTab == _HomeGroupTab.pending) {
+        return _buildPendingEmptyState(colorScheme);
+      }
+
+      if (_selectedGroupTab == _HomeGroupTab.completed) {
+        return _buildCompletedEmptyState(colorScheme);
+      }
+
+      if (_selectedGroupTab == _HomeGroupTab.all) {
+        return _buildEmptyGroupsState(colorScheme);
+      }
+
+      return completedGroups.isNotEmpty
+          ? _buildNoCurrentGroupsState(
+              colorScheme,
+              hasPendingGroups: pendingGroups.isNotEmpty,
+            )
+          : _buildEmptyGroupsState(colorScheme);
+    }
+
+    if (groupsVm.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_selectedGroupTab == _HomeGroupTab.active) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF2F6FF),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFC8D5F2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.bolt_rounded,
+                    color: colorScheme.primary,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'These groups are currently active and already running their payment cycle.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF314A86),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Column(
+              children: currentGroups
+                  .map((g) => _buildGroupCard(context, g, colorScheme))
+                  .toList(),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_selectedGroupTab == _HomeGroupTab.pending) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF8E8),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFF1D48C)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE59F1C).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.schedule_rounded,
+                    color: Color(0xFFB77900),
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'These groups are waiting to start or still need the creator to begin the cycle.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF6F4E00),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Column(
+              children: currentGroups
+                  .map((g) => _buildGroupCard(context, g, colorScheme))
+                  .toList(),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_selectedGroupTab == _HomeGroupTab.completed) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1F7F2),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFBEDDC4)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.task_alt_rounded,
+                    color: Colors.green,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'These paluwagan cycles are already completed and kept here for reference.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF285B34),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Column(
+              children: currentGroups
+                  .map((g) => _buildGroupCard(context, g, colorScheme))
+                  .toList(),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_selectedGroupTab == _HomeGroupTab.all) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F7FA),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFD9DCE4)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.grid_view_rounded,
+                    color: Colors.grey.shade700,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'This view combines your active, pending, and completed groups in one place.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF4E5565),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Column(
+              children: currentGroups
+                  .map((g) => _buildGroupCard(context, g, colorScheme))
+                  .toList(),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: currentGroups
+          .map((g) => _buildGroupCard(context, g, colorScheme))
+          .toList(),
+    );
+  }
+
   Widget _buildGroupCard(
     BuildContext context,
     PaluwaganGroup group,
@@ -925,3 +1510,17 @@ class _HomeContentState extends State<HomeContent> {
     return '$days days left';
   }
 }
+
+class _HeaderAction {
+  const _HeaderAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+}
+
+enum _HomeGroupTab { active, pending, completed, all }

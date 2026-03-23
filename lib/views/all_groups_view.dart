@@ -12,6 +12,44 @@ class AllGroupsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return const _GroupsCollectionPage(
+      title: 'My Paluwagan Groups',
+      showCompletedOnly: false,
+      emptyTitle: 'No Groups Found',
+      emptySubtitle: 'Create or join a group to get started',
+    );
+  }
+}
+
+class CompletedGroupsPage extends StatelessWidget {
+  const CompletedGroupsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const _GroupsCollectionPage(
+      title: 'Completed Groups',
+      showCompletedOnly: true,
+      emptyTitle: 'No Completed Groups',
+      emptySubtitle: 'Completed paluwagan cycles will appear here.',
+    );
+  }
+}
+
+class _GroupsCollectionPage extends StatelessWidget {
+  const _GroupsCollectionPage({
+    required this.title,
+    required this.showCompletedOnly,
+    required this.emptyTitle,
+    required this.emptySubtitle,
+  });
+
+  final String title;
+  final bool showCompletedOnly;
+  final String emptyTitle;
+  final String emptySubtitle;
+
+  @override
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final authVm = context.watch<AuthViewModel>();
     final groupsVm = context.watch<GroupsViewModel>();
@@ -19,14 +57,40 @@ class AllGroupsPage extends StatelessWidget {
     return StreamBuilder<List<Map<String, dynamic>>>(
       stream: groupsVm.streamGroups(authVm.currentUser!.id),
       builder: (context, snapshot) {
-        final groups = snapshot.data?.map((g) => PaluwaganGroup.fromMap(g)).toList() 
-            ?? groupsVm.groups;
+        final allGroups =
+            snapshot.data?.map((g) => PaluwaganGroup.fromMap(g)).toList() ??
+            groupsVm.groups;
+        final groups = allGroups
+            .where(
+              (g) => showCompletedOnly
+                  ? g.groupStatus == 'completed'
+                  : g.groupStatus != 'completed',
+            )
+            .toList();
+        final hasCompletedGroups = allGroups.any(
+          (g) => g.groupStatus == 'completed',
+        );
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('My Paluwagan Groups'),
+            title: Text(title),
             backgroundColor: colorScheme.primary,
             foregroundColor: Colors.white,
+            actions: showCompletedOnly
+                ? null
+                : [
+                    IconButton(
+                      tooltip: 'Completed Groups',
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const CompletedGroupsPage(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.inventory_2_outlined),
+                    ),
+                  ],
             bottom: groups.isNotEmpty
                 ? PreferredSize(
                     preferredSize: const Size.fromHeight(4),
@@ -55,43 +119,62 @@ class AllGroupsPage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      const Text(
-                        'No Groups Found',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      Text(
+                        emptyTitle,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Create or join a group to get started',
+                        emptySubtitle,
                         style: TextStyle(color: Colors.grey[600]),
                       ),
-                      const SizedBox(height: 24),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.of(context).pushNamed('/create-group');
-                            },
-                            icon: const Icon(Icons.add),
-                            label: const Text('Create'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: colorScheme.primary,
-                              foregroundColor: Colors.white,
+                      if (!showCompletedOnly) ...[
+                        const SizedBox(height: 24),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.of(context).pushNamed('/create-group');
+                              },
+                              icon: const Icon(Icons.add),
+                              label: const Text('Create'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: colorScheme.primary,
+                                foregroundColor: Colors.white,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          OutlinedButton.icon(
-                            onPressed: () {
-                              Navigator.of(context).pushNamed('/join-group');
-                            },
-                            icon: const Icon(Icons.group_add),
-                            label: const Text('Join'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: colorScheme.primary,
+                            const SizedBox(width: 12),
+                            OutlinedButton.icon(
+                              onPressed: () {
+                                Navigator.of(context).pushNamed('/join-group');
+                              },
+                              icon: const Icon(Icons.group_add),
+                              label: const Text('Join'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: colorScheme.primary,
+                              ),
                             ),
+                          ],
+                        ),
+                        if (hasCompletedGroups) ...[
+                          const SizedBox(height: 12),
+                          TextButton.icon(
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const CompletedGroupsPage(),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.inventory_2_outlined),
+                            label: const Text('View Completed Groups'),
                           ),
                         ],
-                      ),
+                      ],
                     ],
                   ),
                 )
