@@ -437,6 +437,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Your account has been deleted successfully.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      await Future.delayed(const Duration(milliseconds: 1200));
+      if (!mounted) return;
+
       Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
     }
   }
