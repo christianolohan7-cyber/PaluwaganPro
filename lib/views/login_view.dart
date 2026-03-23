@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/auth_viewmodel.dart';
+import '../viewmodels/notification_viewmodel.dart';
 import 'home_view.dart';
 import 'signup_view.dart';
 
@@ -74,6 +75,10 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     if (!mounted || !success) return;
+
+    final notifVm = context.read<NotificationViewModel>();
+    await notifVm.loadUserNotifications(auth.currentUser!.id);
+    await notifVm.startNotificationsStream(auth.currentUser!.id);
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(

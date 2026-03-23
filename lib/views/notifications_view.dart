@@ -14,6 +14,24 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
+  Future<void> _markAllAsRead(BuildContext context) async {
+    final notifVm = context.read<NotificationViewModel>();
+    final success = await notifVm.markAllAsRead();
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          success
+              ? 'All notifications marked as read'
+              : (notifVm.errorMessage ?? 'Failed to mark all as read'),
+        ),
+        backgroundColor: success ? Colors.green : Colors.red,
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -55,13 +73,30 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Notifications',
-          style: TextStyle(color: Colors.black),
-        ),
+        title: const Text('Notifications', style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
+        actions: [
+          Consumer<NotificationViewModel>(
+            builder: (context, notifVm, _) {
+              final canMarkAll = notifVm.notifications.isNotEmpty &&
+                  notifVm.unreadCount > 0 &&
+                  !notifVm.isLoading;
+
+              return TextButton(
+                onPressed: canMarkAll ? () => _markAllAsRead(context) : null,
+                child: Text(
+                  'Mark all as read',
+                  style: TextStyle(
+                    color: canMarkAll ? Theme.of(context).colorScheme.primary : Colors.grey,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: Padding(

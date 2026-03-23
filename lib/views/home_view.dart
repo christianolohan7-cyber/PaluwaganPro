@@ -31,8 +31,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startNotifications();
       _loadUserGroups();
     });
+  }
+
+  Future<void> _startNotifications() async {
+    final authVm = context.read<AuthViewModel>();
+    final notifVm = context.read<NotificationViewModel>();
+
+    if (authVm.currentUser != null &&
+        notifVm.activeUserId != authVm.currentUser!.id) {
+      await notifVm.loadUserNotifications(authVm.currentUser!.id);
+      await notifVm.startNotificationsStream(authVm.currentUser!.id);
+    }
   }
 
   Future<void> _loadUserGroups() async {
@@ -148,17 +160,6 @@ class NotificationsScreenWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authVm = context.watch<AuthViewModel>();
-    final notifVm = context.watch<NotificationViewModel>();
-
-    if (authVm.currentUser != null &&
-        notifVm.activeUserId != authVm.currentUser!.id) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        notifVm.loadUserNotifications(authVm.currentUser!.id);
-        notifVm.startNotificationsStream(authVm.currentUser!.id);
-      });
-    }
-
     return const NotificationsScreen();
   }
 }

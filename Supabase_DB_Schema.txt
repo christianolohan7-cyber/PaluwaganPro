@@ -191,3 +191,13 @@ after INSERT
 or
 update on public.payment_proofs for EACH row
 execute FUNCTION create_payment_proof_notification ();
+
+
+create or replace function public.create_group_update_notifications()
+returns trigger
+language plpgsql
+security definer;
+
+create trigger tr_create_group_update_notifications
+after update on public.groups for EACH row
+execute FUNCTION create_group_update_notifications ();

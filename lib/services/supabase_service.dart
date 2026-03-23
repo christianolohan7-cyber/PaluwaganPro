@@ -304,6 +304,14 @@ class SupabaseService {
         .eq('id', notificationId);
   }
 
+  Future<void> markAllNotificationsAsRead(String userId) async {
+    await _supabase
+        .from('notifications')
+        .update({'is_read': true, 'read_at': DateTime.now().toIso8601String()})
+        .eq('user_id', userId)
+        .eq('is_read', false);
+  }
+
   // --- REAL-TIME STREAMS ---
   Stream<List<Map<String, dynamic>>> streamGroups(String userId) {
     return _supabase

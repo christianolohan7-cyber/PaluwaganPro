@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/supabase_config.dart';
 
 import 'services/db_service.dart';
+import 'services/local_notification_service.dart';
 import 'services/supabase_service.dart';
 import 'viewmodels/auth_viewmodel.dart';
 import 'viewmodels/groups_viewmodel.dart';
@@ -28,6 +29,7 @@ Future<void> main() async {
   );
 
   await DbService.instance.database;
+  await LocalNotificationService.instance.initialize();
   runApp(const PaluwaganProApp());
 }
 
