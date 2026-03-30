@@ -683,35 +683,242 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
 
   Widget _buildScheduleTab(BuildContext context, PaluwaganGroup group) {
     final groupsVm = context.watch<GroupsViewModel>();
+    final colorScheme = Theme.of(context).colorScheme;
+
     return StreamBuilder<List<Map<String, dynamic>>>(
       stream: groupsVm.streamRotations(group.id),
-      builder: (context, snapshot) {
-        final rotations = snapshot.data?.map((r) => RoundRotation.fromMap(r)).toList() ?? groupsVm.roundRotations;
-        if (rotations.isEmpty) return _buildEmptyTab(Icons.calendar_today_rounded, 'No schedule yet', 'Wait for the group to start.');
+      builder: (context, rotationSnapshot) {
+        final rotations = rotationSnapshot.data?.map((r) => RoundRotation.fromMap(r)).toList() ?? groupsVm.roundRotations;
         
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: rotations.length,
-          itemBuilder: (context, index) {
-            final r = rotations[index];
-            final isPast = r.status == 'completed';
-            final isCurrent = r.status == 'in_progress';
-            final statusColor = isPast ? Colors.green : (isCurrent ? Theme.of(context).colorScheme.primary : const Color(0xFF94A3B8));
+        if (rotations.isEmpty) return _buildEmptyTab(Icons.calendar_today_rounded, 'No schedule yet', 'Wait for the group to start.');
 
-            return Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: isCurrent ? statusColor.withOpacity(0.3) : const Color(0xFFF1F5F9))),
-              child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                leading: CircleAvatar(backgroundColor: statusColor.withOpacity(0.1), child: Text('${r.round}', style: TextStyle(color: statusColor, fontWeight: FontWeight.w900, fontSize: 14))),
-                title: Text(r.recipientName, style: TextStyle(fontSize: 14, fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w600)),
-                subtitle: Text(_formatDateWithYear(r.payoutDate), style: const TextStyle(fontSize: 11)),
-                trailing: Text(r.status.toUpperCase(), style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: statusColor)),
-              ),
+        return StreamBuilder<List<Map<String, dynamic>>>(
+          stream: groupsVm.streamMembers(group.id),
+          builder: (context, memberSnapshot) {
+            final members = memberSnapshot.data?.map((m) => GroupMember.fromMap(m)).toList() ?? [];
+
+            return StreamBuilder<List<Map<String, dynamic>>>(
+              stream: groupsVm.streamContributions(group.id),
+              builder: (context, contributionSnapshot) {
+                final contributions = contributionSnapshot.data?.map((c) => Contribution.fromMap(c)).toList() ?? [];
+
+                return StreamBuilder<List<Map<String, dynamic>>>(
+                  stream: groupsVm.streamPaymentProofs(group.id),
+                  builder: (context, proofSnapshot) {
+                    final proofs = proofSnapshot.data?.map((p) => PaymentProof.fromMap(p)).toList() ?? [];
+
+                    return ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: rotations.length,
+                      itemBuilder: (context, index) {
+                        final r = rotations[index];
+                        final isPast = r.status == 'completed';
+                        final isCurrent = r.status == 'in_progress';
+                        final statusColor = isPast ? Colors.green : (isCurrent ? colorScheme.primary : const Color(0xFF94A3B8));
+
+                        final roundContributions = contributions.where((c) => c.round == r.round).toList();
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: isCurrent ? statusColor.withOpacity(0.3) : const Color(0xFFF1F5F9)),
+                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+                          ),
+                          child: Theme(
+                            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                            child: ExpansionTile(
+                              tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                              leading: CircleAvatar(
+                                radius: 18,
+                                backgroundColor: statusColor.withOpacity(0.1),
+                                child: Text('${r.round}', style: TextStyle(color: statusColor, fontWeight: FontWeight.w900, fontSize: 14)),
+                              ),
+                              title: Text(
+                                r.recipientName,
+                                style: TextStyle(fontSize: 14, fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w600, color: const Color(0xFF1E293B)),
+                              ),
+                              subtitle: Text(
+                                _formatDateWithYear(r.payoutDate),
+                                style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.w500),
+                              ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    r.status.toUpperCase(),
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w900,
+                                      color: statusColor,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: Color(0xFF94A3B8)),
+                                ],
+                              ),
+                              children: [
+                                const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                                Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'ROUND STATUS',
+                                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8), letterSpacing: 1),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      ...members.map((member) {
+                                        final contrib = roundContributions.firstWhere(
+                                          (c) => c.userId == member.userId,
+                                          orElse: () => Contribution(
+                                            id: 0,
+                                            groupId: group.id,
+                                            userId: member.userId,
+                                            round: r.round,
+                                            amount: group.contribution,
+                                            status: 'pending',
+                                            dueDate: r.payoutDate,
+                                          ),
+                                        );
+                                        
+                                        final proof = proofs.firstWhere(
+                                          (p) => p.contributionId == contrib.id,
+                                          orElse: () => PaymentProof(id: 0, contributionId: 0, groupId: 0, senderId: '', senderName: '', recipientId: '', recipientName: '', round: 0, gcashName: '', gcashNumber: '', transactionNo: '', screenshotPath: '', amount: 0, status: 'none', submittedAt: DateTime.now()),
+                                        );
+
+                                        final isPaid = contrib.status == 'paid';
+                                        final hasProof = proof.status != 'none';
+                                        
+                                        return Padding(
+                                          padding: const EdgeInsets.only(bottom: 12),
+                                          child: Row(
+                                            children: [
+                                              _buildMemberAvatar(name: member.userName, userId: member.userId, radius: 14, fontSize: 10),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Text(
+                                                  member.userId == r.recipientId ? '${member.userName} (Recipient)' : member.userName,
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                    fontWeight: member.userId == r.recipientId ? FontWeight.w800 : FontWeight.w600,
+                                                    color: const Color(0xFF475569),
+                                                  ),
+                                                ),
+                                              ),
+                                              if (member.userId == r.recipientId)
+                                                _buildBadge('GETTING PAID', Colors.orange)
+                                              else if (isPaid || hasProof)
+                                                Row(
+                                                  children: [
+                                                    _buildBadge(
+                                                      isPaid ? 'PAID' : 'VERIFYING',
+                                                      isPaid ? Colors.green : Colors.blue,
+                                                    ),
+                                                    if (hasProof) ...[
+                                                      const SizedBox(width: 8),
+                                                      GestureDetector(
+                                                        onTap: () => _viewReceipt(context, proof),
+                                                        child: Container(
+                                                          padding: const EdgeInsets.all(6),
+                                                          decoration: BoxDecoration(
+                                                            color: colorScheme.primary.withOpacity(0.1),
+                                                            borderRadius: BorderRadius.circular(8),
+                                                          ),
+                                                          child: Icon(
+                                                            Icons.receipt_long_rounded,
+                                                            size: 14,
+                                                            color: colorScheme.primary,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ],
+                                                )
+                                              else
+                                                _buildBadge('PENDING', Colors.grey),
+                                            ],
+                                          ),
+                                        );
+                                      }),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                );
+              },
             );
           },
         );
       },
+    );
+  }
+
+  void _viewReceipt(BuildContext context, PaymentProof proof) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Row(
+          children: [
+            const Icon(Icons.receipt_long_rounded, color: Color(0xFF2563EB)),
+            const SizedBox(width: 12),
+            const Text('Payment Receipt', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+          ],
+        ),
+        content: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.6,
+            maxWidth: double.maxFinite,
+          ),
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('From: ${proof.senderName}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                Text('Ref: ${proof.transactionNo}', style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.w500)),
+                const SizedBox(height: 16),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: proof.screenshotPath.startsWith('http')
+                      ? Image.network(
+                          proof.screenshotPath,
+                          fit: BoxFit.contain,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              height: 200,
+                              alignment: Alignment.center,
+                              child: const CircularProgressIndicator(strokeWidth: 3),
+                            );
+                          },
+                        )
+                      : Image.file(File(proof.screenshotPath), fit: BoxFit.contain),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('CLOSE', style: TextStyle(fontWeight: FontWeight.w800)),
+          ),
+        ],
+      ),
     );
   }
 

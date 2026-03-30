@@ -364,45 +364,89 @@ class _HomeContentState extends State<HomeContent> {
                   ),
                   const SizedBox(height: 24),
 
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Associations',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF1E293B),
-                          letterSpacing: -0.5,
+                  // Filter Groups Section
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFFF1F5F9)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.02),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
-                      ),
-                      _buildNavChip(
-                        icon: Icons.grid_view_rounded,
-                        label: 'All',
-                        isSelected: _selectedGroupTab == _HomeGroupTab.all,
-                        onTap: () => setState(() => _selectedGroupTab = _HomeGroupTab.all),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  _buildGroupNavbar(
-                    context,
-                    activeCount: activeVisibleGroups.length,
-                    pendingCount: pendingGroups.length,
-                    completedCount: completedGroups.length,
-                  ),
-                  const SizedBox(height: 16),
-
-                  _buildCurrentTabContent(
-                    context,
-                    colorScheme,
-                    groupsVm,
-                    activeVisibleGroups: activeVisibleGroups,
-                    pendingGroups: pendingGroups,
-                    completedGroups: completedGroups,
-                  ),
-                ],
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.filter_list_rounded, size: 18, color: Color(0xFF1E293B)),
+                            SizedBox(width: 8),
+                            Text(
+                              'Filter Groups',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF1E293B),
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        // All 4 chips in one row
+                        Row(
+                          children: [
+                            _buildNavChip(
+                              icon: Icons.grid_view_rounded,
+                              label: 'All',
+                              isSelected: _selectedGroupTab == _HomeGroupTab.all,
+                              onTap: () => setState(() => _selectedGroupTab = _HomeGroupTab.all),
+                            ),
+                            const SizedBox(width: 6),
+                            _buildNavChip(
+                              icon: Icons.bolt_rounded,
+                              label: 'Active',
+                              count: activeVisibleGroups.length,
+                              isSelected: _selectedGroupTab == _HomeGroupTab.active,
+                              onTap: () => setState(() => _selectedGroupTab = _HomeGroupTab.active),
+                            ),
+                            const SizedBox(width: 6),
+                            _buildNavChip(
+                              icon: Icons.hourglass_top_rounded,
+                              label: 'Pending',
+                              count: pendingGroups.length,
+                              isSelected: _selectedGroupTab == _HomeGroupTab.pending,
+                              onTap: () => setState(() => _selectedGroupTab = _HomeGroupTab.pending),
+                            ),
+                            const SizedBox(width: 6),
+                            _buildNavChip(
+                              icon: Icons.task_alt_rounded,
+                              label: 'History',
+                              count: completedGroups.length,
+                              isSelected: _selectedGroupTab == _HomeGroupTab.completed,
+                              onTap: () => setState(() => _selectedGroupTab = _HomeGroupTab.completed),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        // Content now INSIDE the container
+                        _buildCurrentTabContent(
+                          context,
+                          colorScheme,
+                          groupsVm,
+                          activeVisibleGroups: activeVisibleGroups,
+                          pendingGroups: pendingGroups,
+                          completedGroups: completedGroups,
+                        ),
+                      ],
+                    ),
+                  ),                ],
               ),
             ),
           ),
@@ -655,22 +699,32 @@ class _HomeContentState extends State<HomeContent> {
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          height: 72, // Fixed height for square-like feel
           decoration: BoxDecoration(
             color: isSelected ? colorScheme.primary : Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isSelected ? colorScheme.primary : const Color(0xFFF1F5F9),
             ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: colorScheme.primary.withOpacity(0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
           ),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 icon,
-                size: 16,
+                size: 20,
                 color: isSelected ? Colors.white : const Color(0xFF64748B),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 4),
               Text(
                 label,
                 style: TextStyle(
@@ -680,6 +734,7 @@ class _HomeContentState extends State<HomeContent> {
                 ),
               ),
               if (count != null) ...[
+                const SizedBox(height: 2),
                 Text(
                   count.toString(),
                   style: TextStyle(
@@ -687,6 +742,12 @@ class _HomeContentState extends State<HomeContent> {
                     fontWeight: FontWeight.w900,
                     color: isSelected ? Colors.white.withOpacity(0.8) : const Color(0xFF94A3B8),
                   ),
+                ),
+              ] else if (label == 'All') ...[
+                const SizedBox(height: 2),
+                const Text(
+                  '', // Empty placeholder to keep alignment
+                  style: TextStyle(fontSize: 9),
                 ),
               ],
             ],
