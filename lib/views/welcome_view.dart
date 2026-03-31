@@ -1,9 +1,5 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import '../viewmodels/auth_viewmodel.dart';
 import 'login_view.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -87,7 +83,7 @@ class _SplashScreenState extends State<SplashScreen> {
             colors: [
               const Color(0xFFF8FAFC),
               const Color(0xFFF1F5F9),
-              const Color(0xFFE2E8F0).withOpacity(0.5),
+              const Color(0xFFE2E8F0).withValues(alpha: 0.5),
             ],
           ),
         ),
@@ -114,7 +110,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(top: 8, bottom: 24),
+                    padding: const EdgeInsets.only(top: 6, bottom: 20),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(
@@ -122,51 +118,51 @@ class _SplashScreenState extends State<SplashScreen> {
                         (index) => AnimatedContainer(
                           duration: const Duration(milliseconds: 300),
                           margin: const EdgeInsets.symmetric(horizontal: 4),
-                          width: _currentPage == index ? 32 : 8,
-                          height: 8,
+                          width: _currentPage == index ? 24 : 6,
+                          height: 6,
                           decoration: BoxDecoration(
                             color: _currentPage == index
                                 ? colorScheme.primary
-                                : colorScheme.primary.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(4),
+                                : colorScheme.primary.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(3),
                           ),
                         ),
                       ),
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
                     child: SizedBox(
                       width: double.infinity,
-                      height: 56,
+                      height: 50,
                       child: ElevatedButton(
                         onPressed: _navigateToLogin,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: colorScheme.primary,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(28),
+                            borderRadius: BorderRadius.circular(25),
                           ),
-                          elevation: 4,
-                          shadowColor: colorScheme.primary.withOpacity(0.4),
+                          elevation: 3,
+                          shadowColor: colorScheme.primary.withValues(alpha: 0.4),
                         ),
                         child: const Text(
                           'GET STARTED',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 14,
                             fontWeight: FontWeight.w800,
-                            letterSpacing: 1.2,
+                            letterSpacing: 1,
                           ),
                         ),
                       ),
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.only(bottom: 12),
                     child: Text(
                       '© 2026 PaluwaganPro. Building trust in Filipino communities.',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 10,
                         fontWeight: FontWeight.w500,
                         color: Colors.grey.shade500,
                       ),
@@ -197,17 +193,17 @@ class OnboardingPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final isCompactHeight = availableHeight < 760;
     final topSpacing = page.isFirstScreen
-        ? (isCompactHeight ? 24.0 : 40.0) // Reduced from 48/80
-        : (isCompactHeight ? 24.0 : 32.0);
+        ? (isCompactHeight ? 20.0 : 32.0)
+        : (isCompactHeight ? 20.0 : 28.0);
     final logoSize = page.isFirstScreen
-        ? (isCompactHeight ? 180.0 : 220.0)
-        : (isCompactHeight ? 120.0 : 140.0);
+        ? (isCompactHeight ? 140.0 : 180.0)
+        : (isCompactHeight ? 100.0 : 120.0);
     final spacingAfterLogo = page.isFirstScreen
-        ? (isCompactHeight ? 32.0 : 48.0) // Reduced from 40/56
-        : 24.0;
+        ? (isCompactHeight ? 24.0 : 32.0)
+        : 20.0;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: ConstrainedBox(
@@ -226,26 +222,26 @@ class OnboardingPage extends StatelessWidget {
                   boxShadow: [
                     // Outer vibrant glow
                     BoxShadow(
-                      color: page.iconColor.withOpacity(0.2),
-                      blurRadius: 40,
-                      spreadRadius: 5,
+                      color: page.iconColor.withValues(alpha: 0.15),
+                      blurRadius: 30,
+                      spreadRadius: 4,
                     ),
                     // Inner bloom
                     BoxShadow(
-                      color: page.iconColor.withOpacity(0.15),
-                      blurRadius: 20,
+                      color: page.iconColor.withValues(alpha: 0.1),
+                      blurRadius: 15,
                       spreadRadius: 0,
                     ),
                     // Standard elevation shadow
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 30,
-                      offset: const Offset(0, 15),
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
                     ),
                   ],
                   border: Border.all(
                     color: Colors.white,
-                    width: page.isFirstScreen ? 8 : 6,
+                    width: page.isFirstScreen ? 6 : 4,
                   ),
                 ),
                 child: Container(
@@ -254,12 +250,12 @@ class OnboardingPage extends StatelessWidget {
                     gradient: RadialGradient(
                       colors: [
                         Colors.white,
-                        page.iconColor.withOpacity(0.05),
+                        page.iconColor.withValues(alpha: 0.05),
                       ],
                       stops: const [0.8, 1.0],
                     ),
                     border: Border.all(
-                      color: page.iconColor.withOpacity(0.1),
+                      color: page.iconColor.withValues(alpha: 0.1),
                       width: 1,
                     ),
                   ),
@@ -286,39 +282,39 @@ class OnboardingPage extends StatelessWidget {
                 Text(
                   page.title,
                   style: const TextStyle(
-                    fontSize: 28,
+                    fontSize: 22,
                     fontWeight: FontWeight.w900,
                     color: Color(0xFF1E293B),
                     letterSpacing: -0.5,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
               ],
               if (page.subtitle != null)
                 Text(
                   page.subtitle!,
                   style: TextStyle(
-                    fontSize: page.isFirstScreen ? 18 : 15,
+                    fontSize: page.isFirstScreen ? 15 : 13,
                     color: const Color(0xFF475569),
-                    height: 1.6,
+                    height: 1.5,
                     fontWeight: page.isFirstScreen ? FontWeight.w500 : FontWeight.normal,
                   ),
                   textAlign: TextAlign.center,
                 ),
               if (page.features != null) ...[
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
                 ...page.features!.map(
                   (feature) => Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.all(20),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
-                          blurRadius: 15,
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
                       ],
@@ -330,18 +326,18 @@ class OnboardingPage extends StatelessWidget {
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(10),
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color: const Color(0xFFEEF2FF),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(
                             feature.icon,
                             color: const Color(0xFF2563EB),
-                            size: 24,
+                            size: 20,
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 14),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -349,18 +345,18 @@ class OnboardingPage extends StatelessWidget {
                               Text(
                                 feature.title,
                                 style: const TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w700,
                                   color: Color(0xFF1E293B),
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 2),
                               Text(
                                 feature.description,
                                 style: const TextStyle(
-                                  fontSize: 13,
+                                  fontSize: 11,
                                   color: Color(0xFF64748B),
-                                  height: 1.4,
+                                  height: 1.3,
                                 ),
                               ),
                             ],
@@ -371,7 +367,7 @@ class OnboardingPage extends StatelessWidget {
                   ),
                 ),
               ],
-              SizedBox(height: page.isFirstScreen ? 40 : 24),
+              SizedBox(height: page.isFirstScreen ? 32 : 20),
             ],
           ),
         ),

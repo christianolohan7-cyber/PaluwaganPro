@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../models/paluwagan_group.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import '../viewmodels/groups_viewmodel.dart';
+import '../utils/ui_utils.dart';
 import 'group_detail_view.dart';
 
 class AllGroupsPage extends StatelessWidget {
@@ -73,7 +74,7 @@ class _GroupsCollectionPage extends StatelessWidget {
 
         return Scaffold(
           appBar: AppBar(
-            title: Text(title),
+            title: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
             backgroundColor: colorScheme.primary,
             foregroundColor: Colors.white,
             actions: showCompletedOnly
@@ -88,14 +89,14 @@ class _GroupsCollectionPage extends StatelessWidget {
                           ),
                         );
                       },
-                      icon: const Icon(Icons.inventory_2_outlined),
+                      icon: const Icon(Icons.inventory_2_outlined, size: 20),
                     ),
                   ],
             bottom: groups.isNotEmpty
                 ? PreferredSize(
-                    preferredSize: const Size.fromHeight(4),
+                    preferredSize: const Size.fromHeight(1),
                     child: Container(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                       height: 1,
                     ),
                   )
@@ -107,32 +108,32 @@ class _GroupsCollectionPage extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: colorScheme.primary.withOpacity(0.1),
+                          color: colorScheme.primary.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.group_off,
-                          size: 64,
-                          color: colorScheme.primary.withOpacity(0.5),
+                          size: 48,
+                          color: colorScheme.primary.withValues(alpha: 0.5),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                       Text(
                         emptyTitle,
                         style: const TextStyle(
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       Text(
                         emptySubtitle,
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
                       ),
                       if (!showCompletedOnly) ...[
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -140,28 +141,30 @@ class _GroupsCollectionPage extends StatelessWidget {
                               onPressed: () {
                                 Navigator.of(context).pushNamed('/create-group');
                               },
-                              icon: const Icon(Icons.add),
-                              label: const Text('Create'),
+                              icon: const Icon(Icons.add, size: 18),
+                              label: const Text('Create', style: TextStyle(fontSize: 13)),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: colorScheme.primary,
                                 foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 10),
                             OutlinedButton.icon(
                               onPressed: () {
                                 Navigator.of(context).pushNamed('/join-group');
                               },
-                              icon: const Icon(Icons.group_add),
-                              label: const Text('Join'),
+                              icon: const Icon(Icons.group_add, size: 18),
+                              label: const Text('Join', style: TextStyle(fontSize: 13)),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: colorScheme.primary,
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               ),
                             ),
                           ],
                         ),
                         if (hasCompletedGroups) ...[
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
                           TextButton.icon(
                             onPressed: () {
                               Navigator.of(context).push(
@@ -170,8 +173,8 @@ class _GroupsCollectionPage extends StatelessWidget {
                                 ),
                               );
                             },
-                            icon: const Icon(Icons.inventory_2_outlined),
-                            label: const Text('View Completed Groups'),
+                            icon: const Icon(Icons.inventory_2_outlined, size: 16),
+                            label: const Text('View Completed Groups', style: TextStyle(fontSize: 12)),
                           ),
                         ],
                       ],
@@ -179,7 +182,7 @@ class _GroupsCollectionPage extends StatelessWidget {
                   ),
                 )
               : ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   itemCount: groups.length,
                   itemBuilder: (context, index) {
                     final g = groups[index];
@@ -187,12 +190,12 @@ class _GroupsCollectionPage extends StatelessWidget {
                     final progress = g.currentRound / g.maxMembers;
 
                     return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
+                      margin: const EdgeInsets.only(bottom: 10),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(14),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -200,8 +203,8 @@ class _GroupsCollectionPage extends StatelessWidget {
                             Text(
                               g.name,
                               style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -209,33 +212,33 @@ class _GroupsCollectionPage extends StatelessWidget {
                             Text(
                               g.description,
                               style: const TextStyle(
-                                fontSize: 13,
+                                fontSize: 12,
                                 color: Colors.grey,
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
 
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 10),
 
                             // Creator/Member & Status Badges
                             Row(
                               children: [
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
+                                    horizontal: 6,
+                                    vertical: 3,
                                   ),
                                   decoration: BoxDecoration(
                                     color: isCreator
-                                        ? colorScheme.primary.withOpacity(0.1)
-                                        : Colors.green.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
+                                        ? colorScheme.primary.withValues(alpha: 0.1)
+                                        : Colors.green.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
                                     isCreator ? 'Creator' : 'Member',
                                     style: TextStyle(
-                                      fontSize: 11,
+                                      fontSize: 10,
                                       fontWeight: FontWeight.w600,
                                       color: isCreator
                                           ? colorScheme.primary
@@ -243,26 +246,26 @@ class _GroupsCollectionPage extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 8),
+                                const SizedBox(width: 6),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
+                                    horizontal: 6,
+                                    vertical: 3,
                                   ),
                                   decoration: BoxDecoration(
                                     color: g.groupStatus == 'active'
-                                        ? colorScheme.primary.withOpacity(0.08)
+                                        ? colorScheme.primary.withValues(alpha: 0.08)
                                         : (g.groupStatus == 'completed'
-                                            ? Colors.green.withOpacity(0.08)
-                                            : Colors.grey.withOpacity(0.08)),
-                                    borderRadius: BorderRadius.circular(12),
+                                            ? Colors.green.withValues(alpha: 0.08)
+                                            : Colors.grey.withValues(alpha: 0.08)),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
                                     g.groupStatus == 'active'
                                         ? 'Active'
                                         : (g.groupStatus == 'completed' ? 'Completed' : 'Pending'),
                                     style: TextStyle(
-                                      fontSize: 11,
+                                      fontSize: 10,
                                       fontWeight: FontWeight.w600,
                                       color: g.groupStatus == 'active'
                                           ? colorScheme.primary
@@ -273,7 +276,7 @@ class _GroupsCollectionPage extends StatelessWidget {
                               ],
                             ),
 
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 10),
 
                             // Progress Bar
                             Column(
@@ -288,14 +291,14 @@ class _GroupsCollectionPage extends StatelessWidget {
                                           ? 'Waiting to Start'
                                           : 'Round ${g.currentRound}/${g.maxMembers}',
                                       style: const TextStyle(
-                                        fontSize: 13,
+                                        fontSize: 11,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
                                     Text(
                                       '${(progress * 100).toStringAsFixed(0)}%',
                                       style: const TextStyle(
-                                        fontSize: 12,
+                                        fontSize: 11,
                                         color: Colors.grey,
                                       ),
                                     ),
@@ -308,12 +311,12 @@ class _GroupsCollectionPage extends StatelessWidget {
                                   valueColor: AlwaysStoppedAnimation(
                                     colorScheme.primary,
                                   ),
-                                  minHeight: 6,
+                                  minHeight: 5,
                                 ),
                               ],
                             ),
 
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 14),
 
                             // Stats in 2x2 grid
                             Row(
@@ -333,7 +336,7 @@ class _GroupsCollectionPage extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 6),
                             Row(
                               children: [
                                 Expanded(
@@ -351,12 +354,12 @@ class _GroupsCollectionPage extends StatelessWidget {
                               ],
                             ),
 
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 14),
 
                             // Join Code (if creator)
                             if (isCreator) ...[
                               Container(
-                                padding: const EdgeInsets.all(8),
+                                padding: const EdgeInsets.all(6),
                                 decoration: BoxDecoration(
                                   color: Colors.grey.shade100,
                                   borderRadius: BorderRadius.circular(8),
@@ -365,14 +368,14 @@ class _GroupsCollectionPage extends StatelessWidget {
                                   children: [
                                     const Icon(
                                       Icons.key,
-                                      size: 14,
+                                      size: 12,
                                       color: Colors.grey,
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
                                       'Join Code: ${g.joinCode}',
                                       style: const TextStyle(
-                                        fontSize: 12,
+                                        fontSize: 11,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -383,31 +386,24 @@ class _GroupsCollectionPage extends StatelessWidget {
                                           ClipboardData(text: g.joinCode),
                                         );
                                         if (!context.mounted) return;
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Code copied to clipboard',
-                                            ),
-                                          ),
-                                        );
+                                        UIUtils.showFloatingBanner(context, 'Code copied to clipboard');
                                       },
                                       child: Icon(
                                         Icons.copy,
-                                        size: 16,
+                                        size: 14,
                                         color: colorScheme.primary,
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                              const SizedBox(height: 16),
+                              const SizedBox(height: 12),
                             ],
 
                             // View Details Button
                             SizedBox(
                               width: double.infinity,
+                              height: 40,
                               child: ElevatedButton(
                                 onPressed: () {
                                   Navigator.of(context).push(
@@ -421,14 +417,14 @@ class _GroupsCollectionPage extends StatelessWidget {
                                   backgroundColor: colorScheme.primary,
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
                                 ),
                                 child: const Text(
                                   'VIEW DETAILS',
                                   style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
                                   ),
                                 ),
                               ),
@@ -440,7 +436,7 @@ class _GroupsCollectionPage extends StatelessWidget {
                   },
                 ),
         );
-      }
+      },
     );
   }
 
@@ -448,11 +444,11 @@ class _GroupsCollectionPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        const SizedBox(height: 2),
+        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+        const SizedBox(height: 1),
         Text(
           value,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
         ),
       ],
     );

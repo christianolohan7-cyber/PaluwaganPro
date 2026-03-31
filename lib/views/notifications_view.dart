@@ -5,6 +5,7 @@ import '../models/notification.dart' as notif_model;
 import '../viewmodels/auth_viewmodel.dart';
 import '../viewmodels/groups_viewmodel.dart';
 import '../viewmodels/notification_viewmodel.dart';
+import '../utils/ui_utils.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -20,16 +21,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          success
-              ? 'All notifications marked as read'
-              : (notifVm.errorMessage ?? 'Failed to mark all as read'),
-        ),
-        backgroundColor: success ? const Color(0xFF10B981) : const Color(0xFFEF4444),
-        behavior: SnackBarBehavior.floating,
-      ),
+    UIUtils.showFloatingBanner(
+      context,
+      success
+          ? 'All notifications marked as read'
+          : (notifVm.errorMessage ?? 'Failed to mark all as read'),
+      isError: !success,
     );
   }
 
@@ -82,14 +79,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           children: [
             // Header Section - Scaled Down
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
                     'Notifications',
                     style: TextStyle(
-                      fontSize: 22,
+                      fontSize: 20,
                       fontWeight: FontWeight.w900,
                       color: Color(0xFF1E293B),
                       letterSpacing: -0.5,
@@ -106,17 +103,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             canMarkAll ? () => _markAllAsRead(context) : null,
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 6),
+                              horizontal: 8, vertical: 4),
                           minimumSize: Size.zero,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                         child: Text(
                           'Mark all as read',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 11,
                             color: canMarkAll
                                 ? colorScheme.primary
                                 : Colors.grey.shade400,
@@ -134,7 +131,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               child: Consumer<NotificationViewModel>(
                 builder: (context, notifVm, _) {
                   if (notifVm.isLoading) {
-                    return const Center(child: CircularProgressIndicator(strokeWidth: 3));
+                    return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
                   }
 
                   if (notifVm.notifications.isEmpty) {
@@ -143,22 +140,22 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(20),
+                            padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               color: Colors.grey.shade100,
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
                               Icons.notifications_none_outlined,
-                              size: 48,
+                              size: 40,
                               color: Colors.grey.shade300,
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 12),
                           Text(
                             'No notifications yet',
                             style: TextStyle(
-                              fontSize: 15,
+                              fontSize: 14,
                               fontWeight: FontWeight.w700,
                               color: Colors.grey.shade500,
                             ),
@@ -177,7 +174,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       }
                     },
                     child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                       itemCount: notifVm.notifications.length,
                       itemBuilder: (context, index) {
                         final notif = notifVm.notifications[index];
@@ -211,15 +208,15 @@ class _NotificationTile extends StatelessWidget {
     final formattedDate = '${date.month}/${date.day}/${date.year}';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: isUnread ? Colors.white : const Color(0xFFF1F5F9).withOpacity(0.4),
-        borderRadius: BorderRadius.circular(16),
+        color: isUnread ? Colors.white : const Color(0xFFF1F5F9).withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(14),
         boxShadow: isUnread
             ? [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
-                  blurRadius: 8,
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 6,
                   offset: const Offset(0, 2),
                 ),
               ]
@@ -229,23 +226,23 @@ class _NotificationTile extends StatelessWidget {
         ),
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
         leading: Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
             color: isUnread ? const Color(0xFFEEF2FF) : Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
             isUnread ? Icons.notifications_active_outlined : Icons.notifications_none_outlined,
             color: isUnread ? const Color(0xFF2563EB) : Colors.grey.shade400,
-            size: 20,
+            size: 18,
           ),
         ),
         title: Text(
           notification.title,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: isUnread ? FontWeight.w800 : FontWeight.w600,
             color: isUnread ? const Color(0xFF1E293B) : const Color(0xFF64748B),
           ),
@@ -253,22 +250,22 @@ class _NotificationTile extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 2),
+            const SizedBox(height: 1),
             Text(
               notification.message,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 11,
                 color: isUnread ? const Color(0xFF475569) : Colors.grey.shade500,
                 height: 1.3,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
             Text(
               formattedDate,
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 9,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey.shade400,
               ),
@@ -278,8 +275,8 @@ class _NotificationTile extends StatelessWidget {
         onTap: onTap,
         trailing: isUnread
             ? Container(
-                width: 6,
-                height: 6,
+                width: 5,
+                height: 5,
                 decoration: const BoxDecoration(
                   color: Color(0xFFEF4444),
                   shape: BoxShape.circle,
@@ -307,7 +304,7 @@ class NotificationDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text(
           'Notification',
-          style: TextStyle(fontSize: 18, color: Color(0xFF1E293B), fontWeight: FontWeight.w900),
+          style: TextStyle(fontSize: 16, color: Color(0xFF1E293B), fontWeight: FontWeight.w900),
         ),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1E293B),
@@ -317,16 +314,16 @@ class NotificationDetailScreen extends StatelessWidget {
       backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           child: Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
-                  blurRadius: 12,
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
               ],
@@ -338,34 +335,34 @@ class NotificationDetailScreen extends StatelessWidget {
                 Text(
                   notification.title,
                   style: const TextStyle(
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: FontWeight.w900,
                     color: Color(0xFF1E293B),
                     letterSpacing: -0.5,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Text(
                   '$formattedDate at $formattedTime',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: Colors.grey.shade500,
                   ),
                 ),
-                const Divider(height: 32, color: Color(0xFFF1F5F9)),
+                const Divider(height: 24, color: Color(0xFFF1F5F9)),
                 Text(
                   notification.message,
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     height: 1.5,
                     color: Color(0xFF475569),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 if (notification.groupId != null) ...[
                   _buildDetailRow('Group ID', notification.groupId.toString()),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                 ],
                 _buildDetailRow('Type', notification.type.replaceAll('_', ' ').toUpperCase()),
               ],

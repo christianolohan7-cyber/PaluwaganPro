@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../viewmodels/groups_viewmodel.dart';
 import '../viewmodels/auth_viewmodel.dart';
+import '../utils/ui_utils.dart';
 import 'home_view.dart';
 
 class CreateGroupScreen extends StatefulWidget {
@@ -25,7 +26,6 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
   final List<String> _frequencies = ['Weekly', 'Monthly'];
 
   bool _isCreating = false;
-  String? _errorMessage;
 
   @override
   void dispose() {
@@ -68,7 +68,6 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
 
     setState(() {
       _isCreating = true;
-      _errorMessage = null;
     });
 
     try {
@@ -99,28 +98,28 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
             backgroundColor: Colors.white,
             surfaceTintColor: Colors.white,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(20),
             ),
             title: Column(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: const Color(0xFFECFDF5),
                     shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFFD1FAE5), width: 3),
+                    border: Border.all(color: const Color(0xFFD1FAE5), width: 2.5),
                   ),
                   child: const Icon(
                     Icons.check_circle_rounded,
                     color: Color(0xFF10B981),
-                    size: 40,
+                    size: 32,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 const Text(
                   'Group Created!',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: FontWeight.w900,
                     color: Color(0xFF1E293B),
                     letterSpacing: -0.5,
@@ -135,32 +134,32 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                   'Share this unique code with your friends so they can join your association.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     color: Color(0xFF64748B),
                     height: 1.4,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFF1F5F9), width: 2),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
                   ),
                   child: Column(
                     children: [
                       const Text(
                         'INVITATION CODE',
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 9,
                           fontWeight: FontWeight.w800,
                           color: Color(0xFF94A3B8),
                           letterSpacing: 1.2,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -170,36 +169,30 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                               child: SelectableText(
                                 code,
                                 style: const TextStyle(
-                                  fontSize: 32,
+                                  fontSize: 26,
                                   fontWeight: FontWeight.w900,
-                                  letterSpacing: 4,
+                                  letterSpacing: 3,
                                   color: Color(0xFF2563EB),
                                 ),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 10),
                           GestureDetector(
                             onTap: () async {
                               await Clipboard.setData(ClipboardData(text: code));
                               if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Code copied to clipboard!'),
-                                  backgroundColor: Color(0xFF10B981),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
+                              UIUtils.showFloatingBanner(context, 'Code copied to clipboard!');
                             },
                             child: Container(
-                              padding: const EdgeInsets.all(8),
+                              padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFEEF2FF),
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Icon(
                                 Icons.copy_rounded,
-                                size: 18,
+                                size: 16,
                                 color: Color(0xFF2563EB),
                               ),
                             ),
@@ -211,11 +204,11 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                 ),
               ],
             ),
-            actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             actions: [
               SizedBox(
                 width: double.infinity,
-                height: 48,
+                height: 44,
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).pop();
@@ -230,14 +223,14 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                     backgroundColor: const Color(0xFF1E293B),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 0,
                   ),
                   child: const Text(
                     'DONE',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 0.5,
                     ),
@@ -248,15 +241,17 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
           ),
         );
       } else {
-        setState(() {
-          _errorMessage = groupsVm.errorMessage ?? 'Failed to create group';
-        });
+        UIUtils.showFloatingBanner(
+          context,
+          groupsVm.errorMessage ?? 'Failed to create group',
+          isError: true,
+        );
       }
     } catch (e) {
       setState(() {
         _isCreating = false;
-        _errorMessage = 'An error occurred: $e';
       });
+      UIUtils.showFloatingBanner(context, 'An error occurred: $e', isError: true);
     }
   }
 
@@ -269,7 +264,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
           child: Form(
             key: _formKey,
             child: Column(
@@ -278,7 +273,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                 const Text(
                   'Create Group',
                   style: TextStyle(
-                    fontSize: 22,
+                    fontSize: 20,
                     fontWeight: FontWeight.w900,
                     color: Color(0xFF1E293B),
                     letterSpacing: -0.5,
@@ -288,52 +283,23 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                 Text(
                   'Start your own savings association today.',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     color: Colors.grey.shade600,
                     fontWeight: FontWeight.w500,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 24),
-
-                if (_errorMessage != null) ...[
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFEF2F2),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFFEE2E2)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.error_outline, color: Color(0xFFEF4444), size: 18),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _errorMessage!,
-                            style: const TextStyle(
-                              color: Color(0xFF991B1B),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
+                const SizedBox(height: 20),
 
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
-                        blurRadius: 15,
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
                     ],
@@ -345,12 +311,12 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                       const Text(
                         'Group Details',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: FontWeight.w800,
                           color: Color(0xFF1E293B),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
                       _buildField(
                         label: 'Group Name',
                         controller: _nameController,
@@ -362,7 +328,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       _buildField(
                         label: 'Description',
                         controller: _descriptionController,
@@ -375,18 +341,18 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
                       const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
                       const Text(
                         'Financial Settings',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: FontWeight.w800,
                           color: Color(0xFF1E293B),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
                       _buildField(
                         label: 'Total Pot Amount (₱)',
                         controller: _totalPotController,
@@ -404,7 +370,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       _buildField(
                         label: 'Maximum Members',
                         controller: _maxMembersController,
@@ -425,27 +391,27 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       DropdownButtonFormField<String>(
                         value: _selectedFrequency,
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
                         decoration: InputDecoration(
                           labelText: 'Payment Frequency',
-                          labelStyle: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.w500, fontSize: 13),
-                          prefixIcon: const Icon(Icons.calendar_today_outlined, color: Color(0xFF94A3B8), size: 18),
+                          labelStyle: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.w500, fontSize: 12),
+                          prefixIcon: const Icon(Icons.calendar_today_outlined, color: Color(0xFF94A3B8), size: 16),
                           filled: true,
                           fillColor: const Color(0xFFF8FAFC),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(12),
                             borderSide: const BorderSide(color: Color(0xFFF1F5F9), width: 1),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(12),
                             borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
                           ),
                         ),
@@ -461,38 +427,38 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                           });
                         },
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 20),
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           color: const Color(0xFFEEF2FF),
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: const Color(0xFFE0E7FF)),
                         ),
                         child: Column(
                           children: [
                             _buildSummaryRow('Individual Contribution:', '₱${_contributionController.text.isEmpty ? '0' : _contributionController.text}'),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 6),
                             _buildSummaryRow('Estimated Pot:', '₱${_totalPotController.text.isEmpty ? '0' : _totalPotController.text}'),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 6),
                             _buildSummaryRow('Next Payout Target:', _getDeadlineDay()),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 20),
                       SizedBox(
                         width: double.infinity,
-                        height: 52,
+                        height: 48,
                         child: ElevatedButton(
                           onPressed: _isCreating ? null : _createGroup,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: colorScheme.primary,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(26),
+                              borderRadius: BorderRadius.circular(24),
                             ),
-                            elevation: 4,
-                            shadowColor: colorScheme.primary.withOpacity(0.4),
+                            elevation: 3,
+                            shadowColor: colorScheme.primary.withValues(alpha: 0.3),
                           ),
                           child: _isCreating
                               ? const SizedBox(
@@ -506,7 +472,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                               : const Text(
                                   'CREATE GROUP',
                                   style: TextStyle(
-                                    fontSize: 15,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.w800,
                                     letterSpacing: 1,
                                   ),
@@ -526,7 +492,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
 
   Widget _buildSummaryRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: 1),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -535,7 +501,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
             child: Text(
               label,
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF475569),
               ),
@@ -548,7 +514,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
               value,
               textAlign: TextAlign.right,
               style: const TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: FontWeight.w800,
                 color: Color(0xFF2563EB),
               ),
@@ -573,36 +539,36 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
       keyboardType: keyboardType,
       maxLines: maxLines,
       onChanged: onChanged,
-      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.w500, fontSize: 13),
+        labelStyle: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.w500, fontSize: 12),
         alignLabelWithHint: true,
         prefixIcon: Padding(
-          padding: EdgeInsets.only(bottom: maxLines > 1 ? 30 : 0),
-          child: Icon(icon, color: const Color(0xFF94A3B8), size: 18),
+          padding: EdgeInsets.only(bottom: maxLines > 1 ? 24 : 0),
+          child: Icon(icon, color: const Color(0xFF94A3B8), size: 16),
         ),
         filled: true,
         fillColor: const Color(0xFFF8FAFC),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Color(0xFFF1F5F9), width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
         ),
       ),

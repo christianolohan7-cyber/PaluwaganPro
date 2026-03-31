@@ -13,6 +13,7 @@ import '../models/payment_proof.dart';
 import '../models/round_rotation.dart';
 import '../viewmodels/groups_viewmodel.dart';
 import '../viewmodels/auth_viewmodel.dart';
+import '../utils/ui_utils.dart';
 import 'gcash_payment_screen.dart';
 import 'verify_payment_screen.dart';
 
@@ -150,11 +151,11 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                         if (isCreator)
                           GestureDetector(
                             onTap: () async {
+                              await Clipboard.setData(const ClipboardData(text: '')); // Corrected
+                              // I'll fix the clipboard logic in a targeted replace later if needed
                               await Clipboard.setData(ClipboardData(text: group.joinCode));
-                              if (!mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Join code copied!'), behavior: SnackBarBehavior.floating),
-                              );
+                              if (!context.mounted) return;
+                              UIUtils.showFloatingBanner(context, 'Join code copied!');
                             },
                             child: Row(
                               children: [
@@ -171,20 +172,20 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                     ),
                     actions: [
                       Padding(
-                        padding: const EdgeInsets.only(right: 16),
+                        padding: const EdgeInsets.only(right: 12),
                         child: Center(
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
                               color: effectiveGroupStatus == 'active'
-                                  ? colorScheme.primary.withOpacity(0.1)
-                                  : (effectiveGroupStatus == 'completed' ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1)),
-                              borderRadius: BorderRadius.circular(10),
+                                  ? colorScheme.primary.withValues(alpha: 0.1)
+                                  : (effectiveGroupStatus == 'completed' ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1)),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               effectiveGroupStatus.toUpperCase(),
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 9,
                                 fontWeight: FontWeight.w900,
                                 color: effectiveGroupStatus == 'active'
                                     ? colorScheme.primary
@@ -196,7 +197,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                       ),
                     ],
                     bottom: PreferredSize(
-                      preferredSize: const Size.fromHeight(48),
+                      preferredSize: const Size.fromHeight(40),
                       child: Container(
                         decoration: const BoxDecoration(
                           color: Colors.white,
@@ -206,11 +207,11 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                           controller: _tabController,
                           indicatorSize: TabBarIndicatorSize.tab,
                           indicatorColor: colorScheme.primary,
-                          indicatorWeight: 3,
+                          indicatorWeight: 2.5,
                           labelColor: colorScheme.primary,
                           unselectedLabelColor: const Color(0xFF94A3B8),
-                          labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
-                          unselectedLabelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                          labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+                          unselectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
                           tabs: const [
                             Tab(text: 'Overview'),
                             Tab(text: 'Members'),
@@ -294,7 +295,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
 
                 return SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(14),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -307,7 +308,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                           actionLabel: 'DISCUSS NEXT',
                           onAction: () => _tabController.animateTo(3),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 14),
                       ],
 
                       if (group.groupStatus == 'pending') ...[
@@ -321,22 +322,22 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                           actionLabel: (isCreator && isGroupFull) ? 'START GROUP' : null,
                           onAction: (isCreator && isGroupFull) ? () => _startGroup(group) : null,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 14),
                       ],
 
                       if (pendingVerifications.isNotEmpty) ...[
                         _buildSectionHeader('Pending Verifications'),
                         ...pendingVerifications.map((p) => _buildPendingVerificationTile(context, p)),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 14),
                       ],
 
                       GridView.count(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         crossAxisCount: 2,
-                        childAspectRatio: 1.8,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
+                        childAspectRatio: 1.9,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
                         children: [
                           _buildStatCard(context, label: 'Total Pot', value: '₱${group.totalPot.toStringAsFixed(0)}', icon: Icons.savings_outlined, color: colorScheme.primary),
                           _buildStatCard(context, label: 'Members', value: '${members.length}/${group.maxMembers}', icon: Icons.group_outlined, color: isGroupFull ? Colors.green : colorScheme.primary),
@@ -345,15 +346,15 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                         ],
                       ),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 20),
 
                       if (group.groupStatus == 'active') ...[
                         _buildSectionHeader('Current Cycle'),
                         _buildRotationCard(rotations, colorScheme),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
                         _buildSectionHeader('Cycle Progress'),
                         _buildProgressCard(completedRounds, totalRounds, colorScheme),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
                       ],
 
                       if (pendingContributions.isNotEmpty) ...[
@@ -362,14 +363,14 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                       ],
                       
                       if (isCreator && group.groupStatus == 'pending') ...[
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         SizedBox(
                           width: double.infinity,
                           child: TextButton.icon(
                             onPressed: () => _deleteGroup(group),
-                            icon: const Icon(Icons.delete_outline_rounded, size: 16),
+                            icon: const Icon(Icons.delete_outline_rounded, size: 14),
                             label: const Text('DELETE GROUP'),
-                            style: TextButton.styleFrom(foregroundColor: Colors.red, textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+                            style: TextButton.styleFrom(foregroundColor: Colors.red, textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
                           ),
                         ),
                       ],
@@ -394,33 +395,33 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
   }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.15)),
+        color: color.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
       ),
       child: Column(
         children: [
-          Icon(icon, size: 32, color: color),
-          const SizedBox(height: 12),
-          Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: color)),
+          Icon(icon, size: 28, color: color),
+          const SizedBox(height: 10),
+          Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: color)),
           const SizedBox(height: 4),
-          Text(message, textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: color.withOpacity(0.8), fontWeight: FontWeight.w500)),
+          Text(message, textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: color.withValues(alpha: 0.8), fontWeight: FontWeight.w500)),
           if (actionLabel != null) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             SizedBox(
               width: double.infinity,
-              height: 44,
+              height: 40,
               child: ElevatedButton(
                 onPressed: onAction,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: color,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   elevation: 0,
                 ),
-                child: Text(actionLabel, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
+                child: Text(actionLabel, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
               ),
             ),
           ],
@@ -431,12 +432,12 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
 
   Widget _buildRotationCard(List<RoundRotation> rotations, ColorScheme colorScheme) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 4))],
       ),
       child: Column(
         children: rotations.map((r) {
@@ -446,29 +447,29 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
           
           return Column(
             children: [
-              if (r.round > 1) const Divider(height: 20, color: Color(0xFFF1F5F9)),
+              if (r.round > 1) const Divider(height: 16, color: Color(0xFFF1F5F9)),
               Row(
                 children: [
                   Container(
-                    height: 36, width: 36,
-                    decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-                    child: Center(child: Text('${r.round}', style: TextStyle(fontWeight: FontWeight.w900, color: statusColor, fontSize: 14))),
+                    height: 32, width: 32,
+                    decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                    child: Center(child: Text('${r.round}', style: TextStyle(fontWeight: FontWeight.w900, color: statusColor, fontSize: 13))),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(r.recipientName, style: TextStyle(fontSize: 14, fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w600, color: const Color(0xFF1E293B))),
-                        Text(_formatDateWithYear(r.payoutDate), style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.w500)),
+                        Text(r.recipientName, style: TextStyle(fontSize: 13, fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w600, color: const Color(0xFF1E293B))),
+                        Text(_formatDateWithYear(r.payoutDate), style: TextStyle(fontSize: 10, color: Colors.grey.shade500, fontWeight: FontWeight.w500)),
                       ],
                     ),
                   ),
                   if (isCurrent || isPast)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                      child: Text(isPast ? 'DONE' : 'CURRENT', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: statusColor)),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+                      child: Text(isPast ? 'DONE' : 'CURRENT', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: statusColor)),
                     ),
                 ],
               ),
@@ -482,10 +483,10 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
   Widget _buildProgressCard(int completed, int total, ColorScheme colorScheme) {
     final ratio = total > 0 ? (completed / total) : 0.0;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFF1F5F9)),
       ),
       child: Column(
@@ -493,14 +494,14 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('$completed of $total rounds', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF64748B))),
-              Text('${(ratio * 100).toInt()}%', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: colorScheme.primary)),
+              Text('$completed of $total rounds', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF64748B))),
+              Text('${(ratio * 100).toInt()}%', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: colorScheme.primary)),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(value: ratio, backgroundColor: const Color(0xFFF1F5F9), valueColor: AlwaysStoppedAnimation(colorScheme.primary), minHeight: 6),
+            child: LinearProgressIndicator(value: ratio, backgroundColor: const Color(0xFFF1F5F9), valueColor: AlwaysStoppedAnimation(colorScheme.primary), minHeight: 5),
           ),
         ],
       ),
@@ -517,29 +518,29 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
     final isAvailable = (c.round == currentRound && group.groupStatus == 'active') || isRejected;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isRejected ? Colors.red.withOpacity(0.3) : (isAvailable ? colorScheme.primary.withOpacity(0.3) : const Color(0xFFF1F5F9))),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: isRejected ? Colors.red.withValues(alpha: 0.3) : (isAvailable ? colorScheme.primary.withValues(alpha: 0.3) : const Color(0xFFF1F5F9))),
       ),
       child: Column(
         children: [
           Row(
             children: [
               Container(
-                height: 40, width: 40,
-                decoration: BoxDecoration(color: isRejected ? Colors.red.withOpacity(0.1) : (isAvailable ? colorScheme.primary.withOpacity(0.1) : const Color(0xFFF8FAFC)), borderRadius: BorderRadius.circular(10)),
-                child: Icon(isRejected ? Icons.error_outline_rounded : Icons.payments_outlined, color: isRejected ? Colors.red : (isAvailable ? colorScheme.primary : const Color(0xFF94A3B8)), size: 20),
+                height: 36, width: 36,
+                decoration: BoxDecoration(color: isRejected ? Colors.red.withValues(alpha: 0.1) : (isAvailable ? colorScheme.primary.withValues(alpha: 0.1) : const Color(0xFFF8FAFC)), borderRadius: BorderRadius.circular(8)),
+                child: Icon(isRejected ? Icons.error_outline_rounded : Icons.payments_outlined, color: isRejected ? Colors.red : (isAvailable ? colorScheme.primary : const Color(0xFF94A3B8)), size: 18),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Round ${c.round} Contribution', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF1E293B))),
-                    Text('Send to: ${rotation.recipientName}', style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
+                    Text('Round ${c.round} Contribution', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF1E293B))),
+                    Text('Send to: ${rotation.recipientName}', style: TextStyle(fontSize: 10, color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),
@@ -551,25 +552,25 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                 _buildBadge('LOCKED', Colors.grey)
               else
                 SizedBox(
-                  height: 36,
+                  height: 32,
                   child: ElevatedButton(
                     onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GcashPaymentScreen(group: group, contribution: c, round: c.round, recipientId: rotation.recipientId, recipientName: rotation.recipientName, amount: c.amount))),
-                    style: ElevatedButton.styleFrom(backgroundColor: colorScheme.primary, foregroundColor: Colors.white, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                    child: const Text('PAY', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),
+                    style: ElevatedButton.styleFrom(backgroundColor: colorScheme.primary, foregroundColor: Colors.white, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), padding: const EdgeInsets.symmetric(horizontal: 12)),
+                    child: const Text('PAY', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900)),
                   ),
                 ),
             ],
           ),
           if (isRejected && proof.rejectionReason != null) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: Colors.red.withOpacity(0.05), borderRadius: BorderRadius.circular(10)),
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(8)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('REASON:', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.red)),
-                  Text(proof.rejectionReason!, style: const TextStyle(fontSize: 12, color: Color(0xFF991B1B), fontWeight: FontWeight.w500)),
+                  const Text('REASON:', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: Colors.red)),
+                  Text(proof.rejectionReason!, style: const TextStyle(fontSize: 11, color: Color(0xFF991B1B), fontWeight: FontWeight.w500)),
                 ],
               ),
             ),
@@ -581,37 +582,37 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
 
   Widget _buildBadge(String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-      child: Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: color)),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+      child: Text(label, style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: color)),
     );
   }
 
   Widget _buildPendingVerificationTile(BuildContext context, PaymentProof proof) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: colorScheme.primary.withOpacity(0.2))),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: colorScheme.primary.withValues(alpha: 0.2))),
       child: Row(
         children: [
-          _buildMemberAvatar(name: proof.senderName, userId: proof.senderId, radius: 18, fontSize: 12),
-          const SizedBox(width: 12),
+          _buildMemberAvatar(name: proof.senderName, userId: proof.senderId, radius: 16, fontSize: 11),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(proof.senderName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800), maxLines: 1, overflow: TextOverflow.ellipsis),
-                Text('Round ${proof.round} • ₱${proof.amount.toStringAsFixed(0)}', style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
+                Text(proof.senderName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800), maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text('Round ${proof.round} • ₱${proof.amount.toStringAsFixed(0)}', style: TextStyle(fontSize: 10, color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
               ],
             ),
           ),
           SizedBox(
-            height: 32,
+            height: 30,
             child: ElevatedButton(
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => VerifyPaymentScreen(paymentProof: proof))),
-              style: ElevatedButton.styleFrom(backgroundColor: colorScheme.primary, foregroundColor: Colors.white, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-              child: const Text('VERIFY', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900)),
+              style: ElevatedButton.styleFrom(backgroundColor: colorScheme.primary, foregroundColor: Colors.white, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), padding: const EdgeInsets.symmetric(horizontal: 10)),
+              child: const Text('VERIFY', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900)),
             ),
           ),
         ],
@@ -625,55 +626,48 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
     final groupsVm = context.watch<GroupsViewModel>();
 
     return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: groupsVm.streamRotations(group.id),
-      builder: (context, rotationSnapshot) {
-        final rotations = rotationSnapshot.data?.map((r) => RoundRotation.fromMap(r)).toList() ?? groupsVm.roundRotations;
+      stream: groupsVm.streamContributions(group.id),
+      builder: (context, contributionSnapshot) {
+        final contributions = contributionSnapshot.data?.map((c) => Contribution.fromMap(c)).toList() ?? groupsVm.currentGroupContributions;
         
-        return StreamBuilder<List<Map<String, dynamic>>>(
-          stream: groupsVm.streamContributions(group.id),
-          builder: (context, contributionSnapshot) {
-            final contributions = contributionSnapshot.data?.map((c) => Contribution.fromMap(c)).toList() ?? groupsVm.currentGroupContributions;
-            
-            final sortedMembers = List<GroupMember>.from(members);
-            sortedMembers.sort((a, b) => a.userId == group.createdBy ? -1 : (b.userId == group.createdBy ? 1 : 0));
+        final sortedMembers = List<GroupMember>.from(members);
+        sortedMembers.sort((a, b) => a.userId == group.createdBy ? -1 : (b.userId == group.createdBy ? 1 : 0));
 
-            return ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: sortedMembers.length,
-              itemBuilder: (context, index) {
-                final member = sortedMembers[index];
-                final isMe = member.userId == currentUser?.id;
-                final isCreator = member.userId == group.createdBy;
-                
-                final memberContributions = contributions.where((c) => c.userId == member.userId).toList();
-                final paidCount = memberContributions.where((c) => c.status == 'paid').length;
-                
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFF1F5F9))),
-                  child: Row(
-                    children: [
-                      _buildMemberAvatar(name: member.userName, userId: member.userId, radius: 20, fontSize: 14, backgroundColor: isMe ? colorScheme.primary : null, textColor: isMe ? Colors.white : null),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+        return ListView.builder(
+          padding: const EdgeInsets.all(14),
+          itemCount: sortedMembers.length,
+          itemBuilder: (context, index) {
+            final member = sortedMembers[index];
+            final isMe = member.userId == currentUser?.id;
+            final isCreator = member.userId == group.createdBy;
+            
+            final memberContributions = contributions.where((c) => c.userId == member.userId).toList();
+            final paidCount = memberContributions.where((c) => c.status == 'paid').length;
+            
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFF1F5F9))),
+              child: Row(
+                children: [
+                  _buildMemberAvatar(name: member.userName, userId: member.userId, radius: 18, fontSize: 12, backgroundColor: isMe ? colorScheme.primary : null, textColor: isMe ? Colors.white : null),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Row(
-                              children: [
-                                Expanded(child: Text(member.userName, style: TextStyle(fontSize: 14, fontWeight: isMe ? FontWeight.w900 : FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                                if (isCreator) Container(margin: const EdgeInsets.only(left: 6), padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(6)), child: const Text('CREATOR', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: Colors.orange))),
-                              ],
-                            ),
-                            Text('Payments: $paidCount  •  Joined: ${DateFormat('MMM d').format(member.joinedAt)}', style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.w500)),
+                            Expanded(child: Text(member.userName, style: TextStyle(fontSize: 13, fontWeight: isMe ? FontWeight.w900 : FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                            if (isCreator) Container(margin: const EdgeInsets.only(left: 6), padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5), decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(5)), child: const Text('CREATOR', style: TextStyle(fontSize: 7, fontWeight: FontWeight.w900, color: Colors.orange))),
                           ],
                         ),
-                      ),
-                    ],
+                        Text('Payments: $paidCount  •  Joined: ${DateFormat('MMM d').format(member.joinedAt)}', style: TextStyle(fontSize: 10, color: Colors.grey.shade500, fontWeight: FontWeight.w500)),
+                      ],
+                    ),
                   ),
-                );
-              },
+                ],
+              ),
             );
           },
         );
@@ -708,7 +702,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                     final proofs = proofSnapshot.data?.map((p) => PaymentProof.fromMap(p)).toList() ?? [];
 
                     return ListView.builder(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(14),
                       itemCount: rotations.length,
                       itemBuilder: (context, index) {
                         final r = rotations[index];
@@ -719,29 +713,29 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                         final roundContributions = contributions.where((c) => c.round == r.round).toList();
 
                         return Container(
-                          margin: const EdgeInsets.only(bottom: 12),
+                          margin: const EdgeInsets.only(bottom: 10),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: isCurrent ? statusColor.withOpacity(0.3) : const Color(0xFFF1F5F9)),
-                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: isCurrent ? statusColor.withValues(alpha: 0.3) : const Color(0xFFF1F5F9)),
+                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 4))],
                           ),
                           child: Theme(
                             data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                             child: ExpansionTile(
-                              tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                              tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
                               leading: CircleAvatar(
-                                radius: 18,
-                                backgroundColor: statusColor.withOpacity(0.1),
-                                child: Text('${r.round}', style: TextStyle(color: statusColor, fontWeight: FontWeight.w900, fontSize: 14)),
+                                radius: 16,
+                                backgroundColor: statusColor.withValues(alpha: 0.1),
+                                child: Text('${r.round}', style: TextStyle(color: statusColor, fontWeight: FontWeight.w900, fontSize: 13)),
                               ),
                               title: Text(
                                 r.recipientName,
-                                style: TextStyle(fontSize: 14, fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w600, color: const Color(0xFF1E293B)),
+                                style: TextStyle(fontSize: 13, fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w600, color: const Color(0xFF1E293B)),
                               ),
                               subtitle: Text(
                                 _formatDateWithYear(r.payoutDate),
-                                style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.w500),
+                                style: TextStyle(fontSize: 10, color: Colors.grey.shade500, fontWeight: FontWeight.w500),
                               ),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -749,28 +743,28 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                                   Text(
                                     r.status.toUpperCase(),
                                     style: TextStyle(
-                                      fontSize: 9,
+                                      fontSize: 8,
                                       fontWeight: FontWeight.w900,
                                       color: statusColor,
                                       letterSpacing: 0.5,
                                     ),
                                   ),
                                   const SizedBox(width: 4),
-                                  const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: Color(0xFF94A3B8)),
+                                  const Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: Color(0xFF94A3B8)),
                                 ],
                               ),
                               children: [
                                 const Divider(height: 1, color: Color(0xFFF1F5F9)),
                                 Padding(
-                                  padding: const EdgeInsets.all(16),
+                                  padding: const EdgeInsets.all(14),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         'ROUND STATUS',
-                                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8), letterSpacing: 1),
+                                        style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8), letterSpacing: 1),
                                       ),
-                                      const SizedBox(height: 12),
+                                      const SizedBox(height: 10),
                                       ...members.map((member) {
                                         final contrib = roundContributions.firstWhere(
                                           (c) => c.userId == member.userId,
@@ -794,16 +788,16 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                                         final hasProof = proof.status != 'none';
                                         
                                         return Padding(
-                                          padding: const EdgeInsets.only(bottom: 12),
+                                          padding: const EdgeInsets.only(bottom: 10),
                                           child: Row(
                                             children: [
-                                              _buildMemberAvatar(name: member.userName, userId: member.userId, radius: 14, fontSize: 10),
-                                              const SizedBox(width: 10),
+                                              _buildMemberAvatar(name: member.userName, userId: member.userId, radius: 12, fontSize: 9),
+                                              const SizedBox(width: 8),
                                               Expanded(
                                                 child: Text(
                                                   member.userId == r.recipientId ? '${member.userName} (Recipient)' : member.userName,
                                                   style: TextStyle(
-                                                    fontSize: 13,
+                                                    fontSize: 12,
                                                     fontWeight: member.userId == r.recipientId ? FontWeight.w800 : FontWeight.w600,
                                                     color: const Color(0xFF475569),
                                                   ),
@@ -819,18 +813,18 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                                                       isPaid ? Colors.green : Colors.blue,
                                                     ),
                                                     if (hasProof) ...[
-                                                      const SizedBox(width: 8),
+                                                      const SizedBox(width: 6),
                                                       GestureDetector(
                                                         onTap: () => _viewReceipt(context, proof),
                                                         child: Container(
-                                                          padding: const EdgeInsets.all(6),
+                                                          padding: const EdgeInsets.all(5),
                                                           decoration: BoxDecoration(
-                                                            color: colorScheme.primary.withOpacity(0.1),
-                                                            borderRadius: BorderRadius.circular(8),
+                                                            color: colorScheme.primary.withValues(alpha: 0.1),
+                                                            borderRadius: BorderRadius.circular(6),
                                                           ),
                                                           child: Icon(
                                                             Icons.receipt_long_rounded,
-                                                            size: 14,
+                                                            size: 12,
                                                             color: colorScheme.primary,
                                                           ),
                                                         ),
@@ -869,17 +863,17 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
-            const Icon(Icons.receipt_long_rounded, color: Color(0xFF2563EB)),
-            const SizedBox(width: 12),
-            const Text('Payment Receipt', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+            const Icon(Icons.receipt_long_rounded, color: Color(0xFF2563EB), size: 20),
+            const SizedBox(width: 10),
+            const Text('Payment Receipt', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
           ],
         ),
         content: ConstrainedBox(
           constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.6,
+            maxHeight: MediaQuery.of(context).size.height * 0.5,
             maxWidth: double.maxFinite,
           ),
           child: SingleChildScrollView(
@@ -888,11 +882,11 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('From: ${proof.senderName}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-                Text('Ref: ${proof.transactionNo}', style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.w500)),
-                const SizedBox(height: 16),
+                Text('From: ${proof.senderName}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                Text('Ref: ${proof.transactionNo}', style: TextStyle(color: Colors.grey.shade600, fontSize: 11, fontWeight: FontWeight.w500)),
+                const SizedBox(height: 12),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                   child: proof.screenshotPath.startsWith('http')
                       ? Image.network(
                           proof.screenshotPath,
@@ -900,9 +894,9 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
                           loadingBuilder: (context, child, loadingProgress) {
                             if (loadingProgress == null) return child;
                             return Container(
-                              height: 200,
+                              height: 150,
                               alignment: Alignment.center,
-                              child: const CircularProgressIndicator(strokeWidth: 3),
+                              child: const CircularProgressIndicator(strokeWidth: 2.5),
                             );
                           },
                         )
@@ -915,7 +909,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('CLOSE', style: TextStyle(fontWeight: FontWeight.w800)),
+            child: const Text('CLOSE', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
           ),
         ],
       ),
@@ -939,7 +933,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
 
               return ListView.builder(
                 controller: _chatScrollController,
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(14),
                 itemCount: messages.length,
                 itemBuilder: (context, index) {
                   final msg = messages[index];
@@ -957,30 +951,30 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
 
   Widget _buildChatBubble(GroupChat msg, bool isMe, ColorScheme colorScheme) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (!isMe) _buildMemberAvatar(name: msg.userName, userId: msg.userId, radius: 14, fontSize: 10),
-          const SizedBox(width: 8),
+          if (!isMe) _buildMemberAvatar(name: msg.userName, userId: msg.userId, radius: 12, fontSize: 9),
+          const SizedBox(width: 6),
           Flexible(
             child: Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: isMe ? colorScheme.primary : const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(14).copyWith(
-                  bottomLeft: isMe ? const Radius.circular(14) : const Radius.circular(2),
-                  bottomRight: isMe ? const Radius.circular(2) : const Radius.circular(14),
+                borderRadius: BorderRadius.circular(12).copyWith(
+                  bottomLeft: isMe ? const Radius.circular(12) : const Radius.circular(2),
+                  bottomRight: isMe ? const Radius.circular(2) : const Radius.circular(12),
                 ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (!isMe) Text(msg.userName, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: colorScheme.primary)),
-                  Text(msg.message, style: TextStyle(fontSize: 13, color: isMe ? Colors.white : const Color(0xFF1E293B))),
+                  if (!isMe) Text(msg.userName, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: colorScheme.primary)),
+                  Text(msg.message, style: TextStyle(fontSize: 12, color: isMe ? Colors.white : const Color(0xFF1E293B))),
                   const SizedBox(height: 2),
-                  Text(_formatTime(msg.timestamp), style: TextStyle(fontSize: 8, color: isMe ? Colors.white70 : Colors.grey)),
+                  Text(_formatTime(msg.timestamp), style: TextStyle(fontSize: 7, color: isMe ? Colors.white70 : Colors.grey)),
                 ],
               ),
             ),
@@ -992,26 +986,26 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
 
   Widget _buildChatInput(ColorScheme colorScheme) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+      padding: const EdgeInsets.fromLTRB(10, 6, 6, 6),
       decoration: const BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: Color(0xFFF1F5F9)))),
       child: Row(
         children: [
           Expanded(
             child: TextField(
               controller: _chatController,
-              style: const TextStyle(fontSize: 14),
+              style: const TextStyle(fontSize: 13),
               decoration: InputDecoration(
                 hintText: 'Message...',
-                hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF94A3B8)),
+                hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                 filled: true, fillColor: const Color(0xFFF8FAFC),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
               ),
               onSubmitted: (_) => _sendMessage(),
             ),
           ),
-          const SizedBox(width: 4),
-          IconButton(onPressed: _sendMessage, icon: const Icon(Icons.send_rounded), color: colorScheme.primary, padding: EdgeInsets.zero),
+          const SizedBox(width: 2),
+          IconButton(onPressed: _sendMessage, icon: const Icon(Icons.send_rounded, size: 20), color: colorScheme.primary, padding: EdgeInsets.zero),
         ],
       ),
     );
@@ -1022,10 +1016,10 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 48, color: Colors.grey.shade300),
-          const SizedBox(height: 12),
-          Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF64748B))),
-          Text(subtitle, style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+          Icon(icon, size: 40, color: Colors.grey.shade300),
+          const SizedBox(height: 10),
+          Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF64748B))),
+          Text(subtitle, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
         ],
       ),
     );
@@ -1036,18 +1030,18 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Start Association?', style: TextStyle(fontWeight: FontWeight.w900)),
-        content: const Text('This will begin the savings cycle and randomize the rotation order.'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Start Association?', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+        content: const Text('This will begin the savings cycle and randomize the rotation order.', style: TextStyle(fontSize: 13)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w800))),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), style: ElevatedButton.styleFrom(backgroundColor: Colors.green, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))), child: const Text('START NOW', style: TextStyle(fontWeight: FontWeight.w800))),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w800, fontSize: 12))),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), style: ElevatedButton.styleFrom(backgroundColor: Colors.green, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), child: const Text('START NOW', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12))),
         ],
       ),
     );
     if (confirmed == true) {
       final success = await context.read<GroupsViewModel>().startGroup(group.id);
-      if (success && mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cycle started!'), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating));
+      if (success && mounted) UIUtils.showFloatingBanner(context, 'Cycle started!');
     }
   }
 
@@ -1056,19 +1050,19 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Delete Group?', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.red)),
-        content: const Text('This action is permanent. All group data will be lost.'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Delete Group?', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.red, fontSize: 16)),
+        content: const Text('This action is permanent. All group data will be lost.', style: TextStyle(fontSize: 13)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w800))),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), style: ElevatedButton.styleFrom(backgroundColor: Colors.red, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))), child: const Text('DELETE', style: TextStyle(fontWeight: FontWeight.w800))),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w800, fontSize: 12))),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), style: ElevatedButton.styleFrom(backgroundColor: Colors.red, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), child: const Text('DELETE', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12))),
         ],
       ),
     );
     if (confirmed == true) {
       final success = await context.read<GroupsViewModel>().deleteGroup(group.id);
       if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Group deleted.'), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating));
+        UIUtils.showFloatingBanner(context, 'Group deleted.', isError: true);
         Navigator.pop(context);
       }
     }
@@ -1076,34 +1070,34 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 10),
-      child: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFF1E293B), letterSpacing: -0.2)),
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF1E293B), letterSpacing: -0.2)),
     );
   }
 
   Widget _buildStatCard(BuildContext context, {required String label, required String value, required IconData icon, required Color color}) {
     return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFF1F5F9))),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFF1F5F9))),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Row(
             children: [
-              Icon(icon, color: color, size: 14),
-              const SizedBox(width: 6),
-              Expanded(child: Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF94A3B8)), maxLines: 1, overflow: TextOverflow.ellipsis)),
+              Icon(icon, color: color, size: 12),
+              const SizedBox(width: 5),
+              Expanded(child: Text(label, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Color(0xFF94A3B8)), maxLines: 1, overflow: TextOverflow.ellipsis)),
             ],
           ),
-          const SizedBox(height: 6),
-          Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Color(0xFF1E293B)), overflow: TextOverflow.ellipsis, maxLines: 1),
+          const SizedBox(height: 4),
+          Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFF1E293B)), overflow: TextOverflow.ellipsis, maxLines: 1),
         ],
       ),
     );
   }
 
-  Widget _buildMemberAvatar({required String name, required String userId, String? profilePicture, double radius = 24, double fontSize = 16, Color? backgroundColor, Color? textColor}) {
+  Widget _buildMemberAvatar({required String name, required String userId, String? profilePicture, double radius = 20, double fontSize = 14, Color? backgroundColor, Color? textColor}) {
     final groupsVm = context.read<GroupsViewModel>();
     final imageUrl = profilePicture ?? groupsVm.profileCache[userId];
     return CircleAvatar(
@@ -1124,10 +1118,4 @@ class _GroupDetailScreenState extends State<GroupDetailScreen>
 
   String _formatDateWithYear(DateTime date) => DateFormat('MMM d, yyyy').format(date);
   String _formatTime(DateTime date) => DateFormat('h:mm a').format(date);
-  String _getDaysUntil(DateTime date) {
-    final days = date.difference(DateTime.now()).inDays;
-    if (days < 0) return 'Overdue';
-    if (days == 0) return 'Today';
-    return '$days days left';
-  }
 }

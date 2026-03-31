@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../models/payment_proof.dart';
 import '../viewmodels/groups_viewmodel.dart';
 import '../viewmodels/auth_viewmodel.dart';
+import '../utils/ui_utils.dart';
 
 class VerifyPaymentScreen extends StatefulWidget {
   const VerifyPaymentScreen({
@@ -21,12 +22,10 @@ class VerifyPaymentScreen extends StatefulWidget {
 
 class _VerifyPaymentScreenState extends State<VerifyPaymentScreen> {
   bool _isProcessing = false;
-  String? _errorMessage;
 
   Future<void> _verifyPayment() async {
     setState(() {
       _isProcessing = true;
-      _errorMessage = null;
     });
 
     final groupsVm = context.read<GroupsViewModel>();
@@ -44,18 +43,14 @@ class _VerifyPaymentScreenState extends State<VerifyPaymentScreen> {
     if (!mounted) return;
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Payment verified successfully!'),
-          backgroundColor: Color(0xFF10B981),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      UIUtils.showFloatingBanner(context, 'Payment verified successfully!');
       Navigator.of(context).pop();
     } else {
-      setState(() {
-        _errorMessage = groupsVm.errorMessage ?? 'Failed to verify payment';
-      });
+      UIUtils.showFloatingBanner(
+        context,
+        groupsVm.errorMessage ?? 'Failed to verify payment',
+        isError: true,
+      );
     }
   }
 
@@ -67,59 +62,57 @@ class _VerifyPaymentScreenState extends State<VerifyPaymentScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('Reject Payment', style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Reject Payment', style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF1E293B), fontSize: 16)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               'Please provide a reason for rejection. This will be shown to the sender.',
-              style: TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.4),
+              style: TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.4),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             TextField(
               controller: reasonController,
               maxLines: 2,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
               decoration: InputDecoration(
                 hintText: 'e.g., Wrong amount, blurry screenshot...',
-                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 12),
                 filled: true,
                 fillColor: const Color(0xFFF8FAFC),
-                contentPadding: const EdgeInsets.all(12),
+                contentPadding: const EdgeInsets.all(10),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(color: Color(0xFFF1F5F9)),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
                 ),
               ),
             ),
           ],
         ),
-        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('CANCEL', style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w800, fontSize: 13)),
+            child: Text('CANCEL', style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w800, fontSize: 12)),
           ),
           ElevatedButton(
             onPressed: () async {
               if (reasonController.text.trim().isEmpty) return;
 
-              final messenger = ScaffoldMessenger.of(context);
               Navigator.of(context).pop();
 
               setState(() {
                 _isProcessing = true;
-                _errorMessage = null;
               });
 
               final groupsVm = context.read<GroupsViewModel>();
@@ -135,28 +128,24 @@ class _VerifyPaymentScreenState extends State<VerifyPaymentScreen> {
               });
 
               if (success) {
-                messenger.showSnackBar(
-                  const SnackBar(
-                    content: Text('Payment rejected successfully'),
-                    backgroundColor: Color(0xFFF59E0B),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
+                UIUtils.showFloatingBanner(context, 'Payment rejected successfully');
                 Navigator.of(this.context).pop();
               } else {
-                setState(() {
-                  _errorMessage = groupsVm.errorMessage ?? 'Failed to reject payment';
-                });
+                UIUtils.showFloatingBanner(
+                  context,
+                  groupsVm.errorMessage ?? 'Failed to reject payment',
+                  isError: true,
+                );
               }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFEF4444),
               foregroundColor: Colors.white,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('REJECT', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+            child: const Text('REJECT', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
           ),
         ],
       ),
@@ -165,7 +154,6 @@ class _VerifyPaymentScreenState extends State<VerifyPaymentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final proof = widget.paymentProof;
 
     return Scaffold(
@@ -178,14 +166,14 @@ class _VerifyPaymentScreenState extends State<VerifyPaymentScreen> {
         title: Row(
           children: [
             Container(
-              height: 28, width: 28,
+              height: 24, width: 24,
               decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
               child: ClipOval(child: Image.asset('assets/images/logo.png', fit: BoxFit.cover)),
             ),
             const SizedBox(width: 8),
             RichText(
               text: const TextSpan(
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: -0.5, color: Color(0xFF2563EB)),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: -0.5, color: Color(0xFF2563EB)),
                 children: [
                   TextSpan(text: 'Paluwagan'),
                   TextSpan(text: 'Pro', style: TextStyle(color: Color(0xFFEF4444))),
@@ -201,46 +189,46 @@ class _VerifyPaymentScreenState extends State<VerifyPaymentScreen> {
       ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildSectionHeader('Verification Summary'),
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: const Color(0xFFF1F5F9)),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 4))],
               ),
               child: Column(
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Total Amount:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+                      const Text('Total Amount:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
                       Text(
                         '₱${proof.amount.toStringAsFixed(0)}',
-                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF1E293B)),
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF1E293B)),
                       ),
                     ],
                   ),
                   const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 10),
+                    padding: EdgeInsets.symmetric(vertical: 8),
                     child: Divider(height: 1, color: Color(0xFFF1F5F9)),
                   ),
                   Row(
                     children: [
                       _buildMemberAvatar(name: proof.senderName, userId: proof.senderId),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(proof.senderName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF1E293B))),
-                            const SizedBox(height: 2),
-                            Text('Sender', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey.shade500)),
+                            Text(proof.senderName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF1E293B))),
+                            const SizedBox(height: 1),
+                            Text('Sender', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey.shade500)),
                           ],
                         ),
                       ),
@@ -251,44 +239,44 @@ class _VerifyPaymentScreenState extends State<VerifyPaymentScreen> {
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             _buildSectionHeader('Transaction Details'),
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: const Color(0xFFF1F5F9)),
               ),
               child: Column(
                 children: [
                   _buildDetailRow(Icons.account_box_outlined, 'GCash Name', proof.gcashName),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   _buildDetailRow(Icons.phone_android_outlined, 'GCash Number', proof.gcashNumber),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   _buildDetailRow(Icons.receipt_long_outlined, 'Reference No.', proof.transactionNo),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   _buildDetailRow(Icons.schedule_outlined, 'Submitted At', _formatDateTime(proof.submittedAt)),
                 ],
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             _buildSectionHeader('Transaction Screenshot'),
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: const Color(0xFFF1F5F9)),
               ),
               child: Column(
                 children: [
                   if (proof.screenshotPath.isNotEmpty)
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                       child: proof.screenshotPath.startsWith('http')
                           ? Image.network(
                               proof.screenshotPath,
@@ -309,42 +297,37 @@ class _VerifyPaymentScreenState extends State<VerifyPaymentScreen> {
               ),
             ),
 
-            const SizedBox(height: 24),
-
-            if (_errorMessage != null) ...[
-              _buildErrorMessage(_errorMessage!),
-              const SizedBox(height: 16),
-            ],
+            const SizedBox(height: 20),
 
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 44,
               child: ElevatedButton(
                 onPressed: _isProcessing ? null : _verifyPayment,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF10B981),
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-                  elevation: 4,
-                  shadowColor: const Color(0xFF10B981).withOpacity(0.3),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                  elevation: 3,
+                  shadowColor: const Color(0xFF10B981).withValues(alpha: 0.3),
                 ),
                 child: _isProcessing
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5, valueColor: AlwaysStoppedAnimation(Colors.white)))
-                    : const Text('VERIFY & CONFIRM', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)))
+                    : const Text('VERIFY & CONFIRM', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
-              height: 48,
+              height: 44,
               child: OutlinedButton(
                 onPressed: _isProcessing ? null : _rejectPayment,
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFFEF4444),
-                  side: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  side: const BorderSide(color: Color(0xFFEF4444), width: 1.2),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                 ),
-                child: const Text('REJECT PAYMENT', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                child: const Text('REJECT PAYMENT', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
               ),
             ),
           ],
@@ -388,7 +371,7 @@ class _VerifyPaymentScreenState extends State<VerifyPaymentScreen> {
   Widget _buildBadge(String label, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
       child: Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: color, letterSpacing: 0.5)),
     );
   }
@@ -403,20 +386,6 @@ class _VerifyPaymentScreenState extends State<VerifyPaymentScreen> {
           Icon(Icons.no_photography_outlined, size: 36, color: Color(0xFFCBD5E1)),
           SizedBox(height: 6),
           Text('No screenshot available', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorMessage(String msg) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFFEE2E2))),
-      child: Row(
-        children: [
-          const Icon(Icons.error_outline, color: Color(0xFFEF4444), size: 16),
-          const SizedBox(width: 8),
-          Expanded(child: Text(msg, style: const TextStyle(color: Color(0xFF991B1B), fontSize: 12, fontWeight: FontWeight.w600))),
         ],
       ),
     );

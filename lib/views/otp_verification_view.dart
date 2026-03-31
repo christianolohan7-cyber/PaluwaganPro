@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/auth_viewmodel.dart';
+import '../utils/ui_utils.dart';
 import 'home_view.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
@@ -22,7 +23,6 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
   static const int _resendCooldownSeconds = 60;
 
-  String? _errorMessage;
   Timer? _resendTimer;
   int _remainingResendSeconds = 0;
   bool _isResending = false;
@@ -68,13 +68,12 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
     final otp = _controllers.map((c) => c.text).join();
     if (otp.length < 6) {
-      setState(() => _errorMessage = 'Please enter all 6 digits');
+      UIUtils.showFloatingBanner(context, 'Please enter all 6 digits', isError: true);
       return;
     }
 
     setState(() {
       _isVerifying = true;
-      _errorMessage = null;
     });
 
     final authVm = context.read<AuthViewModel>();
@@ -83,6 +82,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       final success = await authVm.verifyEmailOTP(widget.email, otp);
 
       if (success && mounted) {
+        UIUtils.showFloatingBanner(context, 'Email verified successfully!');
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
             builder: (_) => DashboardScreen(user: authVm.currentUser!),
@@ -90,16 +90,24 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           (route) => false,
         );
       } else {
-        setState(() {
-          _errorMessage = authVm.errorMessage ?? 'Invalid or expired code';
-          _isVerifying = false;
-        });
+        if (mounted) {
+          setState(() {
+            _isVerifying = false;
+          });
+          UIUtils.showFloatingBanner(
+            context,
+            authVm.errorMessage ?? 'Invalid or expired code',
+            isError: true,
+          );
+        }
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = 'An error occurred. Please try again.';
-        _isVerifying = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isVerifying = false;
+        });
+        UIUtils.showFloatingBanner(context, 'An error occurred. Please try again.', isError: true);
+      }
     }
   }
 
@@ -157,7 +165,6 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
     setState(() {
       _isResending = true;
-      _errorMessage = null;
     });
 
     final authVm = context.read<AuthViewModel>();
@@ -167,20 +174,17 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
     setState(() {
       _isResending = false;
-      if (!success) {
-        _errorMessage =
-            authVm.errorMessage ?? 'Failed to resend verification code';
-      }
     });
 
     if (success) {
       _syncCooldownFromLastSent(authVm.lastVerificationEmailSentAt);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('A new verification code was sent to ${widget.email}'),
-        ),
-      );
+      UIUtils.showFloatingBanner(context, 'A new verification code was sent to ${widget.email}');
     } else {
+      UIUtils.showFloatingBanner(
+        context,
+        authVm.errorMessage ?? 'Failed to resend verification code',
+        isError: true,
+      );
       final remaining = _extractRemainingSeconds(authVm.errorMessage);
       if (remaining != null && remaining > 0) {
         _startResendCooldown(remaining);
@@ -202,7 +206,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
             colors: [
               const Color(0xFFF8FAFC),
               const Color(0xFFF1F5F9),
-              const Color(0xFFE2E8F0).withOpacity(0.5),
+              const Color(0xFFE2E8F0).withValues(alpha: 0.5),
             ],
           ),
         ),
@@ -217,70 +221,70 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   ),
                   child: IntrinsicHeight(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                       child: Column(
                         children: [
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 20),
                           // Header Section with Logo/Icon
                           Container(
-                            height: 140,
-                            width: 140,
+                            height: 100,
+                            width: 100,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: Colors.white,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 25,
-                                  spreadRadius: 5,
-                                  offset: const Offset(0, 10),
+                                  color: Colors.black.withValues(alpha: 0.05),
+                                  blurRadius: 20,
+                                  spreadRadius: 4,
+                                  offset: const Offset(0, 8),
                                 ),
                               ],
                             ),
                             child: const Icon(
                               Icons.mark_email_read_outlined,
-                              size: 70,
+                              size: 50,
                               color: Color(0xFF2563EB),
                             ),
                           ),
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 24),
                           const Text(
                             'Verification Code',
                             style: TextStyle(
-                              fontSize: 28,
+                              fontSize: 24,
                               fontWeight: FontWeight.w900,
                               color: Color(0xFF1E293B),
                               letterSpacing: -0.5,
                             ),
                             textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 8),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
                             child: Text(
                               'We sent a 6-digit code to ${widget.email}',
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                fontSize: 15,
+                                fontSize: 14,
                                 color: Colors.grey.shade600,
                                 fontWeight: FontWeight.w500,
-                                height: 1.5,
+                                height: 1.4,
                               ),
                             ),
                           ),
-                          const SizedBox(height: 40),
+                          const SizedBox(height: 32),
 
                           // Form Card
                           Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.all(24),
+                            padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(24),
+                              borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.03),
-                                  blurRadius: 15,
+                                  color: Colors.black.withValues(alpha: 0.03),
+                                  blurRadius: 12,
                                   offset: const Offset(0, 4),
                                 ),
                               ],
@@ -293,7 +297,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                   children: List.generate(6, (index) {
                                     return SizedBox(
-                                      width: 42,
+                                      width: 38,
                                       child: TextField(
                                         controller: _controllers[index],
                                         focusNode: _focusNodes[index],
@@ -301,7 +305,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                                         textAlign: TextAlign.center,
                                         maxLength: 1,
                                         style: const TextStyle(
-                                          fontSize: 20,
+                                          fontSize: 18,
                                           fontWeight: FontWeight.w800,
                                           color: Color(0xFF1E293B),
                                         ),
@@ -309,13 +313,13 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                                           counterText: '',
                                           filled: true,
                                           fillColor: const Color(0xFFF8FAFC),
-                                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                                          contentPadding: const EdgeInsets.symmetric(vertical: 10),
                                           enabledBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(10),
                                             borderSide: const BorderSide(color: Color(0xFFF1F5F9), width: 1.5),
                                           ),
                                           focusedBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(10),
                                             borderSide: const BorderSide(color: Color(0xFF2563EB), width: 2),
                                           ),
                                         ),
@@ -325,76 +329,44 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                                   }),
                                 ),
 
-                                // Error Message
-                                if (_errorMessage != null) ...[
-                                  const SizedBox(height: 20),
-                                  Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFEF2F2),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: const Color(0xFFFEE2E2)),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(Icons.error_outline, color: Color(0xFFEF4444), size: 16),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            _errorMessage!,
-                                            style: const TextStyle(
-                                              color: Color(0xFF991B1B),
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 13,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-
-                                const SizedBox(height: 32),
+                                const SizedBox(height: 24),
 
                                 // Verify Button
                                 SizedBox(
                                   width: double.infinity,
-                                  height: 56,
+                                  height: 50,
                                   child: ElevatedButton(
                                     onPressed: authVm.isLoading ? null : _verifyOtp,
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: colorScheme.primary,
                                       foregroundColor: Colors.white,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(28),
+                                        borderRadius: BorderRadius.circular(25),
                                       ),
-                                      elevation: 4,
-                                      shadowColor: colorScheme.primary.withOpacity(0.4),
+                                      elevation: 3,
+                                      shadowColor: colorScheme.primary.withValues(alpha: 0.3),
                                     ),
                                     child: authVm.isLoading
                                         ? const SizedBox(
-                                            width: 24,
-                                            height: 24,
+                                            width: 20,
+                                            height: 20,
                                             child: CircularProgressIndicator(
-                                              strokeWidth: 3,
+                                              strokeWidth: 2.5,
                                               valueColor: AlwaysStoppedAnimation(Colors.white),
                                             ),
                                           )
                                         : const Text(
                                             'VERIFY & REGISTER',
                                             style: TextStyle(
-                                              fontSize: 16,
+                                              fontSize: 14,
                                               fontWeight: FontWeight.w800,
-                                              letterSpacing: 1.2,
+                                              letterSpacing: 1,
                                             ),
                                           ),
                                   ),
                                 ),
 
-                                const SizedBox(height: 24),
+                                const SizedBox(height: 20),
 
                                 // Resend Timer/Link
                                 TextButton(
@@ -404,7 +376,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                                       ? null
                                       : _resendCode,
                                   style: TextButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                                   ),
                                   child: Text(
                                     _isResending
@@ -414,7 +386,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                                         : 'RESEND VERIFICATION CODE',
                                     style: TextStyle(
                                       fontWeight: FontWeight.w800,
-                                      fontSize: 13,
+                                      fontSize: 12,
                                       color: _remainingResendSeconds > 0
                                           ? Colors.grey.shade400
                                           : colorScheme.primary,
@@ -426,7 +398,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                             ),
                           ),
                           const Spacer(),
-                          const SizedBox(height: 40),
+                          const SizedBox(height: 32),
                         ],
                       ),
                     ),

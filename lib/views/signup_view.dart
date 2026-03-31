@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../models/user.dart';
 import '../viewmodels/auth_viewmodel.dart';
+import '../utils/ui_utils.dart';
 import 'otp_verification_view.dart'; // Import the new OTP screen
 
 class SignUpScreen extends StatefulWidget {
@@ -38,7 +39,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _obscurePassword = true;
   bool _obscureRepeatPassword = true;
   bool _isLoading = false;
-  String? _errorMessage;
 
   final ImagePicker _picker = ImagePicker();
 
@@ -79,12 +79,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to pick image: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        UIUtils.showFloatingBanner(context, 'Failed to pick image: $e', isError: true);
+      }
     }
   }
 
@@ -104,16 +101,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_idFrontPath == null || _idBackPath == null) {
-      setState(() {
-        _errorMessage = 'Please upload both front and back of your ID';
-      });
+      UIUtils.showFloatingBanner(context, 'Please upload both front and back of your ID', isError: true);
       return;
     }
 
     if (_urcodePath == null) {
-      setState(() {
-        _errorMessage = 'Please upload your InstaPay QR Code';
-      });
+      UIUtils.showFloatingBanner(context, 'Please upload your InstaPay QR Code', isError: true);
       return;
     }
 
@@ -121,7 +114,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
 
     final user = User(
@@ -144,20 +136,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     final success = await authVm.register(user);
 
+    if (!mounted) return;
+
     setState(() {
       _isLoading = false;
-      if (!success) {
-        _errorMessage = authVm.errorMessage ?? 'Registration failed';
-      }
     });
 
-    if (success && mounted) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => OtpVerificationScreen(email: _emailController.text.trim().toLowerCase()),
-        ),
-      );
+    if (!success) {
+      UIUtils.showFloatingBanner(context, authVm.errorMessage ?? 'Registration failed', isError: true);
+      return;
     }
+
+    UIUtils.showFloatingBanner(context, 'Registration successful! Please verify your email.');
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => OtpVerificationScreen(email: _emailController.text.trim().toLowerCase()),
+      ),
+    );
   }
 
   @override
@@ -173,7 +169,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             colors: [
               const Color(0xFFF8FAFC),
               const Color(0xFFF1F5F9),
-              const Color(0xFFE2E8F0).withOpacity(0.5),
+              const Color(0xFFE2E8F0).withValues(alpha: 0.5),
             ],
           ),
         ),
@@ -220,37 +216,37 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 20),
                       // Logo Section (Smaller than Login)
                       Container(
-                        height: 120,
-                        width: 120,
+                        height: 90,
+                        width: 90,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: Colors.white,
                           boxShadow: [
                             // Outer vibrant glow
                             BoxShadow(
-                              color: colorScheme.primary.withOpacity(0.2),
-                              blurRadius: 30,
-                              spreadRadius: 4,
+                              color: colorScheme.primary.withValues(alpha: 0.15),
+                              blurRadius: 20,
+                              spreadRadius: 2,
                             ),
                             // Inner bloom
                             BoxShadow(
-                              color: colorScheme.primary.withOpacity(0.15),
-                              blurRadius: 15,
+                              color: colorScheme.primary.withValues(alpha: 0.1),
+                              blurRadius: 10,
                               spreadRadius: 0,
                             ),
                             // Standard elevation shadow
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
+                              color: Colors.black.withValues(alpha: 0.06),
+                              blurRadius: 15,
+                              offset: const Offset(0, 8),
                             ),
                           ],
                           border: Border.all(
                             color: Colors.white,
-                            width: 6,
+                            width: 4,
                           ),
                         ),
                         child: Container(
@@ -259,12 +255,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             gradient: RadialGradient(
                               colors: [
                                 Colors.white,
-                                colorScheme.primary.withOpacity(0.05),
+                                colorScheme.primary.withValues(alpha: 0.05),
                               ],
                               stops: const [0.8, 1.0],
                             ),
                             border: Border.all(
-                              color: colorScheme.primary.withOpacity(0.1),
+                              color: colorScheme.primary.withValues(alpha: 0.1),
                               width: 1,
                             ),
                           ),
@@ -277,7 +273,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   color: Colors.white,
                                   child: Icon(
                                     Icons.person_add_outlined,
-                                    size: 60,
+                                    size: 45,
                                     color: colorScheme.primary,
                                   ),
                                 );
@@ -289,25 +285,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.fromLTRB(32, 32, 32, 32),
+                        padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             const Text(
                               'Create Account',
                               style: TextStyle(
-                                fontSize: 32,
+                                fontSize: 26,
                                 fontWeight: FontWeight.w900,
                                 color: Color(0xFF1E293B),
-                                letterSpacing: -1,
+                                letterSpacing: -0.5,
                               ),
                               textAlign: TextAlign.center,
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 6),
                             Text(
                               'Join our community of savers today.',
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: 14,
                                 color: Colors.grey.shade600,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -318,42 +314,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
 
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: Form(
                           key: _formKey,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Error message if any
-                              if (_errorMessage != null) ...[
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFEF2F2),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: const Color(0xFFFEE2E2)),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.error_outline, color: Color(0xFFEF4444), size: 20),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Text(
-                                          _errorMessage!,
-                                          style: const TextStyle(
-                                            color: Color(0xFF991B1B),
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
-                              ],
-
                               _buildSectionHeader('Personal Information'),
                               _buildCard([
                                 _buildInputField(
@@ -367,7 +333,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     return null;
                                   },
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 12),
                                 _buildInputField(
                                   controller: _addressController,
                                   hint: 'Home Address',
@@ -379,7 +345,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     return null;
                                   },
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 12),
                                 _buildInputField(
                                   controller: _ageController,
                                   hint: 'Age',
@@ -401,7 +367,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ),
                               ]),
 
-                              const SizedBox(height: 24),
+                              const SizedBox(height: 20),
                               _buildSectionHeader('GCash Information'),
                               _buildCard([
                                 _buildInputField(
@@ -415,7 +381,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     return null;
                                   },
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 12),
                                 _buildInputField(
                                   controller: _gcashNumberController,
                                   hint: 'GCash Number',
@@ -428,11 +394,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     return null;
                                   },
                                 ),
-                                const SizedBox(height: 20),
+                                const SizedBox(height: 16),
                                 const Text(
                                   'InstaPay QR Code',
                                   style: TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 13,
                                     fontWeight: FontWeight.w700,
                                     color: Color(0xFF475569),
                                   ),
@@ -445,7 +411,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ),
                               ]),
 
-                              const SizedBox(height: 24),
+                              const SizedBox(height: 20),
                               _buildSectionHeader('Account Information'),
                               _buildCard([
                                 _buildInputField(
@@ -462,7 +428,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   }
                                   return null;
                                   },                                ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 12),
                                 _buildInputField(
                                   controller: _passwordController,
                                   hint: 'Password',
@@ -472,13 +438,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     icon: Icon(
                                       _obscurePassword ? Icons.visibility_off : Icons.visibility,
                                       color: Colors.grey.shade400,
-                                      size: 20,
+                                      size: 18,
                                     ),
                                     onPressed: _togglePasswordVisibility,
                                   ),
                                   validator: AuthViewModel.validateStrongPassword,
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 12),
                                 _buildInputField(
                                   controller: _repeatPasswordController,
                                   hint: 'Confirm Password',
@@ -488,7 +454,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     icon: Icon(
                                       _obscureRepeatPassword ? Icons.visibility_off : Icons.visibility,
                                       color: Colors.grey.shade400,
-                                      size: 20,
+                                      size: 18,
                                     ),
                                     onPressed: _toggleRepeatPasswordVisibility,
                                   ),
@@ -504,13 +470,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ),
                               ]),
 
-                              const SizedBox(height: 24),
+                              const SizedBox(height: 20),
                               _buildSectionHeader('Identity Verification'),
                               _buildCard([
                                 const Text(
                                   'Front of ID',
                                   style: TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 13,
                                     fontWeight: FontWeight.w700,
                                     color: Color(0xFF475569),
                                   ),
@@ -521,11 +487,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   filename: _idFrontFilename,
                                   icon: Icons.badge_outlined,
                                 ),
-                                const SizedBox(height: 20),
+                                const SizedBox(height: 16),
                                 const Text(
                                   'Back of ID',
                                   style: TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 13,
                                     fontWeight: FontWeight.w700,
                                     color: Color(0xFF475569),
                                   ),
@@ -538,44 +504,44 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ),
                               ]),
 
-                              const SizedBox(height: 40),
+                              const SizedBox(height: 32),
 
                               // Sign Up Button
                               SizedBox(
                                 width: double.infinity,
-                                height: 56,
+                                height: 50,
                                 child: ElevatedButton(
                                   onPressed: _isLoading ? null : _submit,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: colorScheme.primary,
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(28),
+                                      borderRadius: BorderRadius.circular(25),
                                     ),
-                                    elevation: 4,
-                                    shadowColor: colorScheme.primary.withOpacity(0.4),
+                                    elevation: 3,
+                                    shadowColor: colorScheme.primary.withValues(alpha: 0.3),
                                   ),
                                   child: _isLoading
                                       ? const SizedBox(
-                                          width: 24,
-                                          height: 24,
+                                          width: 20,
+                                          height: 20,
                                           child: CircularProgressIndicator(
-                                            strokeWidth: 3,
+                                            strokeWidth: 2.5,
                                             valueColor: AlwaysStoppedAnimation(Colors.white),
                                           ),
                                         )
                                       : const Text(
                                           'CREATE ACCOUNT',
                                           style: TextStyle(
-                                            fontSize: 16,
+                                            fontSize: 14,
                                             fontWeight: FontWeight.w800,
-                                            letterSpacing: 1.2,
+                                            letterSpacing: 1,
                                           ),
                                         ),
                                 ),
                               ),
 
-                              const SizedBox(height: 24),
+                              const SizedBox(height: 20),
 
                               // Login Link
                               Row(
@@ -586,6 +552,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     style: TextStyle(
                                       color: Colors.grey.shade600,
                                       fontWeight: FontWeight.w500,
+                                      fontSize: 13,
                                     ),
                                   ),
                                   GestureDetector(
@@ -595,12 +562,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                       style: TextStyle(
                                         color: colorScheme.primary,
                                         fontWeight: FontWeight.w800,
+                                        fontSize: 14,
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 40),
+                              const SizedBox(height: 32),
                             ],
                           ),
                         ),
@@ -618,11 +586,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 12),
+      padding: const EdgeInsets.only(left: 4, bottom: 10),
       child: Text(
         title,
         style: const TextStyle(
-          fontSize: 18,
+          fontSize: 15,
           fontWeight: FontWeight.w900,
           color: Color(0xFF1E293B),
           letterSpacing: -0.5,
@@ -634,14 +602,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Widget _buildCard(List<Widget> children) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 15,
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -667,33 +635,33 @@ class _SignUpScreenState extends State<SignUpScreen> {
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
-      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.grey.shade400, fontWeight: FontWeight.w500),
-        prefixIcon: Icon(icon, color: const Color(0xFF94A3B8), size: 20),
+        hintStyle: TextStyle(color: Colors.grey.shade400, fontWeight: FontWeight.w500, fontSize: 13),
+        prefixIcon: Icon(icon, color: const Color(0xFF94A3B8), size: 18),
         suffixIcon: suffixIcon,
         filled: true,
         fillColor: const Color(0xFFF8FAFC),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: Color(0xFFF1F5F9), width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
         ),
       ),
@@ -710,48 +678,47 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
         decoration: BoxDecoration(
           color: hasFile ? const Color(0xFFF0F9FF) : const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: hasFile ? const Color(0xFFBAE6FD) : const Color(0xFFE2E8F0),
-            width: 1.5,
-            style: hasFile ? BorderStyle.solid : BorderStyle.solid, // Could use dashed if package available
+            width: 1.2,
           ),
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: hasFile ? const Color(0xFFE0F2FE) : const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 hasFile ? Icons.check_circle : icon,
                 color: hasFile ? const Color(0xFF0284C7) : const Color(0xFF94A3B8),
-                size: 24,
+                size: 20,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    hasFile ? 'File Selected' : 'Choose a file',
+                    Text(
+                    hasFile ? filename : 'Choose a file',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: hasFile ? const Color(0xFF0369A1) : const Color(0xFF475569),
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    hasFile ? filename! : 'Tap to upload from gallery',
+                    hasFile ? filename : 'Tap to upload from gallery',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       color: hasFile ? const Color(0xFF0EA5E9) : Colors.grey.shade500,
                       fontWeight: hasFile ? FontWeight.w600 : FontWeight.normal,
                     ),
@@ -762,7 +729,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
             ),
             if (!hasFile)
-              Icon(Icons.add_circle_outline, color: Colors.grey.shade400, size: 20),
+              Icon(Icons.add_circle_outline, color: Colors.grey.shade400, size: 18),
           ],
         ),
       ),

@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -70,11 +70,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: colorScheme.primary.withOpacity(0.1),
+                    color: colorScheme.primary.withValues(alpha: 0.2),
+                    blurRadius: 15,
+                    spreadRadius: 1,
+                  ),
+                  BoxShadow(
+                    color: colorScheme.primary.withValues(alpha: 0.1),
                     blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    spreadRadius: 0,
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
                 ],
+                border: Border.all(
+                  color: Colors.white,
+                  width: 2,
+                ),
               ),
               child: ClipOval(
                 child: Image.asset(
@@ -88,11 +102,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             RichText(
               text: const TextSpan(
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 18,
                   fontWeight: FontWeight.w900,
                   letterSpacing: -0.5,
                   color: Color(0xFF2563EB),
@@ -121,8 +135,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
               offset: const Offset(0, -2),
             ),
           ],
@@ -130,34 +144,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: BottomNavigationBar(
           items: <BottomNavigationBarItem>[
             const BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home_rounded),
+              icon: Icon(Icons.home_outlined, size: 22),
+              activeIcon: Icon(Icons.home_rounded, size: 22),
               label: 'Home',
             ),
             BottomNavigationBarItem(
               icon: _NotificationBadge(
                 count: notifVm.unreadCount,
-                child: const Icon(Icons.notifications_none_rounded),
+                child: const Icon(Icons.notifications_none_rounded, size: 22),
               ),
               activeIcon: _NotificationBadge(
                 count: notifVm.unreadCount,
-                child: const Icon(Icons.notifications_rounded),
+                child: const Icon(Icons.notifications_rounded, size: 22),
               ),
               label: 'Notif',
             ),
             const BottomNavigationBarItem(
-              icon: Icon(Icons.add_circle_outline_rounded),
-              activeIcon: Icon(Icons.add_circle_rounded),
+              icon: Icon(Icons.add_circle_outline_rounded, size: 22),
+              activeIcon: Icon(Icons.add_circle_rounded, size: 22),
               label: 'Create',
             ),
             const BottomNavigationBarItem(
-              icon: Icon(Icons.group_add_outlined),
-              activeIcon: Icon(Icons.group_add_rounded),
+              icon: Icon(Icons.group_add_outlined, size: 22),
+              activeIcon: Icon(Icons.group_add_rounded, size: 22),
               label: 'Join',
             ),
             const BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline_rounded),
-              activeIcon: Icon(Icons.person_rounded),
+              icon: Icon(Icons.person_outline_rounded, size: 22),
+              activeIcon: Icon(Icons.person_rounded, size: 22),
               label: 'Profile',
             ),
           ],
@@ -168,8 +182,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           type: BottomNavigationBarType.fixed,
           backgroundColor: Colors.white,
           elevation: 0,
-          selectedFontSize: 12,
-          unselectedFontSize: 12,
+          selectedFontSize: 11,
+          unselectedFontSize: 11,
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w800),
           unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
@@ -191,22 +205,22 @@ class _NotificationBadge extends StatelessWidget {
         child,
         if (count > 0)
           Positioned(
-            right: -4,
-            top: -4,
+            right: -3,
+            top: -3,
             child: Container(
-              padding: const EdgeInsets.all(2),
+              padding: const EdgeInsets.all(1),
               decoration: BoxDecoration(
                 color: const Color(0xFFEF4444),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.white, width: 1.5),
+                border: Border.all(color: Colors.white, width: 1.2),
               ),
-              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
               child: Text(
                 count > 9 ? '9+' : count.toString(),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 9,
+                  fontSize: 8,
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -286,7 +300,7 @@ class _HomeContentState extends State<HomeContent> {
             },
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -300,7 +314,7 @@ class _HomeContentState extends State<HomeContent> {
                             Text(
                               'Kumusta, ${authVm.currentUser?.fullName.split(' ').first ?? 'Saver'}!',
                               style: const TextStyle(
-                                fontSize: 20,
+                                fontSize: 18,
                                 fontWeight: FontWeight.w900,
                                 color: Color(0xFF1E293B),
                                 letterSpacing: -0.5,
@@ -310,7 +324,7 @@ class _HomeContentState extends State<HomeContent> {
                             Text(
                               DateFormat('EEEE, MMMM d').format(DateTime.now()),
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 11,
                                 color: Colors.grey.shade500,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -324,15 +338,15 @@ class _HomeContentState extends State<HomeContent> {
                           border: Border.all(color: Colors.white, width: 1.5),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 8,
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 6,
                               offset: const Offset(0, 2),
                             ),
                           ],
                         ),
                         child: CircleAvatar(
-                          radius: 20,
-                          backgroundColor: colorScheme.primary.withOpacity(0.1),
+                          radius: 18,
+                          backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
                           backgroundImage: authVm.currentUser?.profilePicture != null
                               ? NetworkImage(authVm.currentUser!.profilePicture!)
                               : null,
@@ -340,7 +354,7 @@ class _HomeContentState extends State<HomeContent> {
                               ? Text(
                                   authVm.currentUser?.fullName[0].toUpperCase() ?? '?',
                                   style: TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 13,
                                     fontWeight: FontWeight.w800,
                                     color: colorScheme.primary,
                                   ),
@@ -350,10 +364,10 @@ class _HomeContentState extends State<HomeContent> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
                   _buildQuoteCard(colorScheme),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
                   _buildHighlightedSummaryCards(
                     context,
@@ -364,87 +378,110 @@ class _HomeContentState extends State<HomeContent> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Filter Groups Section
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFFF1F5F9)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                  // Filter Groups Title
+                  const Padding(
+                    padding: EdgeInsets.only(left: 4, bottom: 8),
+                    child: Row(
+                      children: [
+                        Icon(Icons.filter_list_rounded, size: 18, color: Color(0xFF1E293B)),
+                        SizedBox(width: 8),
+                        Text(
+                          'Filter Groups',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF1E293B),
+                            letterSpacing: -0.5,
+                          ),
                         ),
                       ],
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  ),
+
+                  // Browser-style Tabs Row
+                  SizedBox(
+                    height: 54,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        const Row(
-                          children: [
-                            Icon(Icons.filter_list_rounded, size: 18, color: Color(0xFF1E293B)),
-                            SizedBox(width: 8),
-                            Text(
-                              'Filter Groups',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFF1E293B),
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                          ],
+                        _buildBrowserTab(
+                          icon: Icons.grid_view_rounded,
+                          label: 'All',
+                          isSelected: _selectedGroupTab == _HomeGroupTab.all,
+                          color: const Color(0xFF6366F1),
+                          onTap: () => setState(() => _selectedGroupTab = _HomeGroupTab.all),
                         ),
-                        const SizedBox(height: 16),
-                        // All 4 chips in one row
-                        Row(
-                          children: [
-                            _buildNavChip(
-                              icon: Icons.grid_view_rounded,
-                              label: 'All',
-                              isSelected: _selectedGroupTab == _HomeGroupTab.all,
-                              onTap: () => setState(() => _selectedGroupTab = _HomeGroupTab.all),
-                            ),
-                            const SizedBox(width: 6),
-                            _buildNavChip(
-                              icon: Icons.bolt_rounded,
-                              label: 'Active',
-                              count: activeVisibleGroups.length,
-                              isSelected: _selectedGroupTab == _HomeGroupTab.active,
-                              onTap: () => setState(() => _selectedGroupTab = _HomeGroupTab.active),
-                            ),
-                            const SizedBox(width: 6),
-                            _buildNavChip(
-                              icon: Icons.hourglass_top_rounded,
-                              label: 'Pending',
-                              count: pendingGroups.length,
-                              isSelected: _selectedGroupTab == _HomeGroupTab.pending,
-                              onTap: () => setState(() => _selectedGroupTab = _HomeGroupTab.pending),
-                            ),
-                            const SizedBox(width: 6),
-                            _buildNavChip(
-                              icon: Icons.task_alt_rounded,
-                              label: 'History',
-                              count: completedGroups.length,
-                              isSelected: _selectedGroupTab == _HomeGroupTab.completed,
-                              onTap: () => setState(() => _selectedGroupTab = _HomeGroupTab.completed),
-                            ),
-                          ],
+                        _buildBrowserTab(
+                          icon: Icons.bolt_rounded,
+                          label: 'Active',
+                          count: activeVisibleGroups.length,
+                          isSelected: _selectedGroupTab == _HomeGroupTab.active,
+                          color: colorScheme.primary,
+                          onTap: () => setState(() => _selectedGroupTab = _HomeGroupTab.active),
                         ),
-                        const SizedBox(height: 24),
-                        // Content now INSIDE the container
-                        _buildCurrentTabContent(
-                          context,
-                          colorScheme,
-                          groupsVm,
-                          activeVisibleGroups: activeVisibleGroups,
-                          pendingGroups: pendingGroups,
-                          completedGroups: completedGroups,
+                        _buildBrowserTab(
+                          icon: Icons.hourglass_top_rounded,
+                          label: 'Pending',
+                          count: pendingGroups.length,
+                          isSelected: _selectedGroupTab == _HomeGroupTab.pending,
+                          color: const Color(0xFFF59E0B),
+                          onTap: () => setState(() => _selectedGroupTab = _HomeGroupTab.pending),
+                        ),
+                        _buildBrowserTab(
+                          icon: Icons.task_alt_rounded,
+                          label: 'History',
+                          count: completedGroups.length,
+                          isSelected: _selectedGroupTab == _HomeGroupTab.completed,
+                          color: const Color(0xFF10B981),
+                          onTap: () => setState(() => _selectedGroupTab = _HomeGroupTab.completed),
                         ),
                       ],
+                    ),
+                  ),
+
+                  // Content Container - Merged with Tabs
+                  Container(
+                    width: double.infinity,
+                    constraints: const BoxConstraints(minHeight: 200),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(24),
+                        bottomRight: Radius.circular(24),
+                        topLeft: Radius.circular(0),
+                        topRight: Radius.circular(0),
+                      ),
+                      border: Border.all(
+                        color: _getTabColor(_selectedGroupTab, colorScheme).withValues(alpha: 0.2),
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _getTabColor(_selectedGroupTab, colorScheme).withValues(alpha: 0.05),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: _getTabColor(_selectedGroupTab, colorScheme).withValues(alpha: 0.02),
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(22),
+                          bottomRight: Radius.circular(22),
+                          topLeft: Radius.circular(0),
+                          topRight: Radius.circular(0),
+                        ),
+                      ),
+                      child: _buildCurrentTabContent(
+                        context,
+                        colorScheme,
+                        groupsVm,
+                        activeVisibleGroups: activeVisibleGroups,
+                        pendingGroups: pendingGroups,
+                        completedGroups: completedGroups,
+                      ),
                     ),
                   ),                ],
               ),
@@ -452,6 +489,69 @@ class _HomeContentState extends State<HomeContent> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildBrowserTab({
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required Color color,
+    int? count,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: isSelected ? 54 : 46,
+          decoration: isSelected 
+            ? ShapeDecoration(
+                color: color,
+                shape: const _BrowserTabShape(),
+                shadows: [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, -2),
+                  )
+                ],
+              )
+            : null,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: isSelected ? 18 : 16,
+                color: isSelected ? Colors.white : const Color(0xFF94A3B8),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: isSelected ? 10 : 9,
+                  fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
+                  color: isSelected ? Colors.white : const Color(0xFF64748B),
+                ),
+              ),
+              if (count != null && isSelected)
+                Container(
+                  margin: const EdgeInsets.only(top: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    count.toString(),
+                    style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: Colors.white),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -464,7 +564,7 @@ class _HomeContentState extends State<HomeContent> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -472,7 +572,7 @@ class _HomeContentState extends State<HomeContent> {
         border: Border.all(color: const Color(0xFFF1F5F9)),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: const EdgeInsets.all(8),
@@ -506,8 +606,6 @@ class _HomeContentState extends State<HomeContent> {
                     height: 1.4,
                     fontWeight: FontWeight.w500,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -547,7 +645,7 @@ class _HomeContentState extends State<HomeContent> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF2563EB).withOpacity(0.2),
+                  color: const Color(0xFF2563EB).withValues(alpha: 0.2),
                   blurRadius: 12,
                   offset: const Offset(0, 6),
                 ),
@@ -592,7 +690,7 @@ class _HomeContentState extends State<HomeContent> {
               border: Border.all(color: const Color(0xFFF1F5F9)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -650,111 +748,17 @@ class _HomeContentState extends State<HomeContent> {
     );
   }
 
-  Widget _buildGroupNavbar(
-    BuildContext context, {
-    required int activeCount,
-    required int pendingCount,
-    required int completedCount,
-  }) {
-    return Row(
-      children: [
-        _buildNavChip(
-          icon: Icons.bolt_rounded,
-          label: 'Active',
-          count: activeCount,
-          isSelected: _selectedGroupTab == _HomeGroupTab.active,
-          onTap: () => setState(() => _selectedGroupTab = _HomeGroupTab.active),
-        ),
-        const SizedBox(width: 6),
-        _buildNavChip(
-          icon: Icons.hourglass_top_rounded,
-          label: 'Pending',
-          count: pendingCount,
-          isSelected: _selectedGroupTab == _HomeGroupTab.pending,
-          onTap: () => setState(() => _selectedGroupTab = _HomeGroupTab.pending),
-        ),
-        const SizedBox(width: 6),
-        _buildNavChip(
-          icon: Icons.task_alt_rounded,
-          label: 'History',
-          count: completedCount,
-          isSelected: _selectedGroupTab == _HomeGroupTab.completed,
-          onTap: () => setState(() => _selectedGroupTab = _HomeGroupTab.completed),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNavChip({
-    required IconData icon,
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-    int? count,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          height: 72, // Fixed height for square-like feel
-          decoration: BoxDecoration(
-            color: isSelected ? colorScheme.primary : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isSelected ? colorScheme.primary : const Color(0xFFF1F5F9),
-            ),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: colorScheme.primary.withOpacity(0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 20,
-                color: isSelected ? Colors.white : const Color(0xFF64748B),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  color: isSelected ? Colors.white : const Color(0xFF64748B),
-                ),
-              ),
-              if (count != null) ...[
-                const SizedBox(height: 2),
-                Text(
-                  count.toString(),
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                    color: isSelected ? Colors.white.withOpacity(0.8) : const Color(0xFF94A3B8),
-                  ),
-                ),
-              ] else if (label == 'All') ...[
-                const SizedBox(height: 2),
-                const Text(
-                  '', // Empty placeholder to keep alignment
-                  style: TextStyle(fontSize: 9),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
+  Color _getTabColor(_HomeGroupTab tab, ColorScheme colorScheme) {
+    switch (tab) {
+      case _HomeGroupTab.active:
+        return colorScheme.primary;
+      case _HomeGroupTab.pending:
+        return const Color(0xFFF59E0B);
+      case _HomeGroupTab.completed:
+        return const Color(0xFF10B981);
+      case _HomeGroupTab.all:
+        return const Color(0xFF6366F1);
+    }
   }
 
   Widget _buildCurrentTabContent(
@@ -774,7 +778,7 @@ class _HomeContentState extends State<HomeContent> {
 
     if (groupsVm.isLoading) {
       return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 32),
+        padding: EdgeInsets.symmetric(vertical: 48),
         child: Center(child: CircularProgressIndicator(strokeWidth: 3)),
       );
     }
@@ -783,8 +787,13 @@ class _HomeContentState extends State<HomeContent> {
       return _buildEmptyState(_selectedGroupTab, colorScheme);
     }
 
-    return Column(
-      children: currentGroups.map((g) => _buildGroupCard(context, g, colorScheme)).toList(),
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: currentGroups.length,
+      itemBuilder: (context, index) {
+        return _buildGroupCard(context, currentGroups[index], colorScheme);
+      },
     );
   }
 
@@ -805,50 +814,45 @@ class _HomeContentState extends State<HomeContent> {
         icon = Icons.hourglass_empty_rounded;
         title = 'No Pending Groups';
         subtitle = 'Waiting-to-start groups.';
-        color = const Color(0xFFE59F1C);
+        color = const Color(0xFFF59E0B);
         break;
       case _HomeGroupTab.completed:
         icon = Icons.task_alt_rounded;
         title = 'No History';
         subtitle = 'Finished cycles.';
-        color = Colors.green;
+        color = const Color(0xFF10B981);
         break;
       case _HomeGroupTab.all:
         icon = Icons.group_off_rounded;
         title = 'No Associations';
         subtitle = 'Get started today!';
-        color = const Color(0xFF94A3B8);
+        color = const Color(0xFF6366F1);
         break;
     }
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.08),
+              color: color.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, size: 36, color: color.withOpacity(0.5)),
+            child: Icon(icon, size: 40, color: color.withValues(alpha: 0.5)),
           ),
           const SizedBox(height: 16),
           Text(
             title,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF1E293B)),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: color.withValues(alpha: 0.8)),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Color(0xFF64748B), fontSize: 13, fontWeight: FontWeight.w500),
+            style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13, fontWeight: FontWeight.w500),
           ),
         ],
       ),
@@ -864,17 +868,17 @@ class _HomeContentState extends State<HomeContent> {
     final isPending = group.groupStatus == 'pending';
     final isCompleted = group.groupStatus == 'completed';
     
-    Color statusColor = isPending ? const Color(0xFFE59F1C) : (isCompleted ? Colors.green : colorScheme.primary);
+    Color statusColor = isPending ? const Color(0xFFF59E0B) : (isCompleted ? const Color(0xFF10B981) : colorScheme.primary);
     String statusLabel = isPending ? 'Pending' : (isCompleted ? 'Completed' : 'Active');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -889,7 +893,7 @@ class _HomeContentState extends State<HomeContent> {
                 .push(MaterialPageRoute(builder: (_) => GroupDetailScreen(groupId: group.id)))
                 .then((_) => _refreshData());
           },
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -907,14 +911,14 @@ class _HomeContentState extends State<HomeContent> {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
+                        color: statusColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         statusLabel,
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: statusColor),
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: statusColor),
                       ),
                     ),
                   ],
@@ -957,12 +961,18 @@ class _HomeContentState extends State<HomeContent> {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(
-                        'Next: ${DateFormat('MMM d').format(group.nextPayoutDate)}',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                      child: Row(
+                        children: [
+                          Icon(Icons.event_available_outlined, size: 12, color: Colors.grey.shade400),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Next: ${DateFormat('MMM d').format(group.nextPayoutDate)}',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                          ),
+                        ],
                       ),
                     ),
-                    const Icon(Icons.arrow_forward_rounded, size: 14, color: Color(0xFF94A3B8)),
+                    Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Colors.grey.shade300),
                   ],
                 ),
               ],
@@ -996,3 +1006,37 @@ class _HomeContentState extends State<HomeContent> {
 }
 
 enum _HomeGroupTab { active, pending, completed, all }
+
+// Custom shape for Browser Tabs
+class _BrowserTabShape extends ShapeBorder {
+  const _BrowserTabShape();
+
+  @override
+  EdgeInsetsGeometry get dimensions => EdgeInsets.zero;
+
+  @override
+  Path getInnerPath(Rect rect, {ui.TextDirection? textDirection}) => Path();
+
+  @override
+  Path getOuterPath(Rect rect, {ui.TextDirection? textDirection}) {
+    final double radius = 12.0;
+    final double shoulderRadius = 14.0;
+    
+    return Path()
+      ..moveTo(rect.left - 4, rect.bottom)
+      ..quadraticBezierTo(rect.left, rect.bottom, rect.left + 2, rect.bottom - 4)
+      ..lineTo(rect.left + radius, rect.top + radius)
+      ..quadraticBezierTo(rect.left + radius + 4, rect.top, rect.left + radius + shoulderRadius, rect.top)
+      ..lineTo(rect.right - radius - shoulderRadius, rect.top)
+      ..quadraticBezierTo(rect.right - radius - 4, rect.top, rect.right - radius, rect.top + radius)
+      ..lineTo(rect.right - 2, rect.bottom - 4)
+      ..quadraticBezierTo(rect.right, rect.bottom, rect.right + 4, rect.bottom)
+      ..close();
+  }
+
+  @override
+  void paint(Canvas canvas, Rect rect, {ui.TextDirection? textDirection}) {}
+
+  @override
+  ShapeBorder scale(double t) => this;
+}
